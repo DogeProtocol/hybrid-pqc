@@ -21,8 +21,9 @@
  */
 #define TEMPALLOC
 
+
 int
-crypto_sign_keypair(unsigned char *pk, unsigned char *sk)
+crypto_sign_keypair_wrapper(unsigned char *pk, unsigned char *sk)
 {
 	TEMPALLOC union {
 		uint8_t b[FALCON_KEYGEN_TEMP_9];
@@ -86,7 +87,7 @@ crypto_sign_keypair(unsigned char *pk, unsigned char *sk)
 }
 
 int
-crypto_sign(unsigned char *sm, unsigned long long *smlen,
+crypto_sign_wrapper(unsigned char *sm, unsigned long long *smlen,
 	const unsigned char *m, unsigned long long mlen,
 	const unsigned char *sk)
 {
@@ -170,7 +171,6 @@ crypto_sign(unsigned char *sm, unsigned long long *smlen,
 	 * Encode the signature and bundle it with the message. Format is:
 	 *   signature length     2 bytes, big-endian
 	 *   nonce                40 bytes
-	 *   message              mlen bytes
 	 *   signature            slen bytes
 	 */
 	esig[0] = 0x20 + 9;
@@ -179,17 +179,16 @@ crypto_sign(unsigned char *sm, unsigned long long *smlen,
 		return -1;
 	}
 	sig_len ++;
-	memmove(sm + 2 + sizeof nonce, m, mlen);
 	sm[0] = (unsigned char)(sig_len >> 8);
 	sm[1] = (unsigned char)sig_len;
 	memcpy(sm + 2, nonce, sizeof nonce);
-	memcpy(sm + 2 + (sizeof nonce) + mlen, esig, sig_len);
-	*smlen = 2 + (sizeof nonce) + mlen + sig_len;
+	memcpy(sm + 2 + (sizeof nonce), esig, sig_len);
+	*smlen = 2 + (sizeof nonce) + sig_len;
 	return 0;
 }
 
 int
-crypto_sign_open(unsigned char *m, unsigned long long *mlen,
+crypto_sign_open_wrapper(unsigned char *m, unsigned long long mlen,
 	const unsigned char *sm, unsigned long long smlen,
 	const unsigned char *pk)
 {
@@ -202,7 +201,7 @@ crypto_sign_open(unsigned char *m, unsigned long long *mlen,
 	TEMPALLOC uint16_t h[512], hm[512];
 	TEMPALLOC int16_t sig[512];
 	TEMPALLOC inner_shake256_context sc;
-	size_t sig_len, msg_len;
+	size_t sig_len;
 
 	/*
 	 * Decode public key.
@@ -227,12 +226,11 @@ crypto_sign_open(unsigned char *m, unsigned long long *mlen,
 	if (sig_len > (smlen - 2 - NONCELEN)) {
 		return -1;
 	}
-	msg_len = smlen - 2 - NONCELEN - sig_len;
 
 	/*
 	 * Decode signature.
 	 */
-	esig = sm + 2 + NONCELEN + msg_len;
+	esig = sm + 2 + NONCELEN;
 	if (sig_len < 1 || esig[0] != 0x20 + 9) {
 		return -1;
 	}
@@ -246,7 +244,8 @@ crypto_sign_open(unsigned char *m, unsigned long long *mlen,
 	 * Hash nonce + message into a vector.
 	 */
 	inner_shake256_init(&sc);
-	inner_shake256_inject(&sc, sm + 2, NONCELEN + msg_len);
+	inner_shake256_inject(&sc, sm + 2, NONCELEN);
+	inner_shake256_inject(&sc, m, mlen);
 	inner_shake256_flip(&sc);
 	Zf(hash_to_point_vartime)(&sc, hm, 9);
 
@@ -256,11 +255,5 @@ crypto_sign_open(unsigned char *m, unsigned long long *mlen,
 	if (!Zf(verify_raw)(hm, sig, h, 9, tmp.b)) {
 		return -1;
 	}
-
-	/*
-	 * Return plaintext.
-	 */
-	memmove(m, sm + 2 + NONCELEN, msg_len);
-	*mlen = msg_len;
 	return 0;
 }
