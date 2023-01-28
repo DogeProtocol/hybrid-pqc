@@ -111,7 +111,7 @@ endif()
 option(OQS_SPEED_USE_ARM_PMU "Use ARM Performance Monitor Unit during benchmarking" OFF)
 set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_VENDOR "www.dogeprotocol.org")
-set(CPACK_PACKAGE_VERSION ${OQS_VERSION_TEXT})
+set(CPACK_PACKAGE_VERSION ${FALCON_VERSION_TEXT})
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6")
 
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "www.dogeprotocol.org")
@@ -133,7 +133,7 @@ endif()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-add_library(falcon SHARED codec.c common.c fft.c fpr.c keygen.c nist.c rng.c shake.c sign.c vrfy.c randombytes.c wrapper.c)
+add_library(falcon SHARED falcon512/codec.c falcon512/common.c falcon512/fft.c falcon512/fpr.c falcon512/keygen.c falcon512/nist.c falcon512/rng.c falcon512/shake.c falcon512/sign.c falcon512/vrfy.c random/randombytes.c  "tweetnacl/tweetnacl.c"  "hybrid/hybrid.h" "hybrid/hybrid.c"   )
 
 set_target_properties(falcon
     PROPERTIES
@@ -200,10 +200,12 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wconversion)
 endif()
 
-set(FALCON_HEADERS ${PROJECT_SOURCE_DIR}/api.h
-                   ${PROJECT_SOURCE_DIR}/fpr.h
-                   ${PROJECT_SOURCE_DIR}/inner.h
-                   ${PROJECT_SOURCE_DIR}/randombytes.h)
+set(FALCON_HEADERS ${PROJECT_SOURCE_DIR}/falcon512/api.h
+                   ${PROJECT_SOURCE_DIR}/falcon512/fpr.h
+                   ${PROJECT_SOURCE_DIR}/falcon512/inner.h
+                   ${PROJECT_SOURCE_DIR}/tweetnacl/tweetnacl.h
+                   ${PROJECT_SOURCE_DIR}/hybrid/hybrid.h
+                   ${PROJECT_SOURCE_DIR}/random/randombytes.h)
 
 install(FILES ${FALCON_HEADERS}
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/falcon)
