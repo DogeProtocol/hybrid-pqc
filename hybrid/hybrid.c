@@ -1,19 +1,91 @@
+#include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
 #include "hybrid.h"
 #include "../falcon512/api.h"
 #include "../tweetnacl/tweetnacl.h"
 
+const int MIN_MSG_LEN = 1;
+const int MAX_MSG_LEN = 64;
+const int SIZE_LEN = 2; //2 for size
+
+const int CRYPTO_ED25519_PUBLICKEY_BYTES = 32;
+const int CRYPTO_ED25519_SECRETKEY_BYTES = 64;
+const int CRYPTO_ED25519_SIGNATURE_BYTES = 64;
+
+const int LEN_BYTES = 2;
+const int CRYPTO_FALCON_PUBLICKEY_BYTES = 897;
+const int CRYPTO_FALCON_SECRETKEY_BYTES = 1281;
+const int CRYPTO_FALCON_MIN_SIGNATURE_BYTES = 600 + 40 + 2; //Signature + Nonce + 2 for size
+const int CRYPTO_FALCON_MAX_SIGNATURE_BYTES = 690 + 40 + 2; //Signature + Nonce + 2 for size
+
+const int CRYPTO_HYBRID_SECRETKEY_BYTES = 64 + 1281;
+const int CRYPTO_HYBRID_SECRETKEY_WITH_FALCON_PUBLIC_KEY_BYTES = 64 + 1281 + 897; //ED25519 already contains public key
+const int CRYPTO_HYBRID_MIN_SIGNATURE_BYTES = 64 + 600 + 40 + 2;
+const int CRYPTO_HYBRID_MAX_SIGNATURE_BYTES = 64 + 690 + 40 + 2;
+const int CRYPTO_HYBRID_MAX_SIGNATURE_BYTES_WITH_LEN = 2 + 2 + 64 + 690 + 40 + 2;
+
+/*
+Secret Key Length = 64 + 1281 + 897 = 3587
+============================================
+Layout of secret key:
+
+32 bytes             32 bytes             1281 bytes          897 bytes 
+ed25519 secret key | ed25519 public key | falcon secret key | falcon public key
+
+
+Signature Length = 2 + 2 + 64 + {1 to 64} + {600 to 690} + 40 + 2 + {1 to 64} + {Padding} = 800 + (MSG_LEN * 2)
+================================================================================================================
+Layout of signature:
+
+
+2 bytes                                           2 bytes                        64 bytes            {1 to 64 bytes}    2 bytes                           40 bytes        {1 to 64 bytes}   {600 to 690 bytes}   {690 - falcon signature}                
+length of ed25519 + falcon signature big-endian | length of message big-endian | ed25519 signature | actual message  |  falcon internal size big-endian | falcon nonce |  actual message  | falcon signature   | falcon signature padding
+
+The first 2 bytes contain signature length of ed25519, falcon including the falcon nonce and internal size, in big-endian order
+The second 2 bytes contain the message length in big-endian order
+Message is variable length, between 1 to 64 bytes
+Falcon Signature is variable length, between 600 to 690. To give predicatable length, rest of bytes are padded with zero (690 - falcon signature).
+
+*/
+
+const int CRYPTO_HYBRID_PUBLICKEY_BYTES = 897 + 32;
+
 int crypto_sign_falcon_ed25519_keypair(unsigned char* pk, unsigned char* sk) {
 	if (pk == NULL || sk == NULL) {
 		return -1;
 	}
 
-	int r1 = crypto_sign_ed25519_keypair(pk, sk);
-	int r2 = crypto_sign_falcon_keypair(pk + CRYPTO_ED25519_PUBLICKEY_BYTES, sk + CRYPTO_ED25519_SECRETKEY_BYTES);
+	unsigned char pk1[32]; //CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned char sk1[64]; //CRYPTO_ED25519_SECRETKEY_BYTES
+	unsigned char pk2[897]; //CRYPTO_FALCON_PUBLICKEY_BYTES
+	unsigned char sk2[1281]; //CRYPTO_FALCON_SECRETKEY_BYTES
 
-	if (r1 != 0 && r2 != 0) {
+	int r1 = crypto_sign_ed25519_keypair(pk1, sk1);
+	if (r1 != 0) {
 		return -2;
+	}
+
+	for (int i = 0;i < CRYPTO_ED25519_PUBLICKEY_BYTES;i++) {
+		pk[i] = pk1[i];
+	}
+
+	for (int i = 0;i < CRYPTO_ED25519_SECRETKEY_BYTES;i++) {
+		sk[i] = sk1[i];
+	}
+
+	int r2 = crypto_sign_falcon_keypair(pk2, sk2);
+
+	if (r2 != 0) {
+		return -3;
+	}
+
+	for (int i = 0;i < CRYPTO_FALCON_PUBLICKEY_BYTES;i++) {
+		pk[CRYPTO_ED25519_PUBLICKEY_BYTES + i] = pk2[i];
+	}
+
+	for (int i = 0;i < CRYPTO_FALCON_SECRETKEY_BYTES;i++) {
+		sk[CRYPTO_ED25519_SECRETKEY_BYTES + i] = sk2[i];
 	}
 
 	return 0;
@@ -27,15 +99,34 @@ int crypto_sign_falcon_ed25519(unsigned char* sm, unsigned long long* smlen,
 		return -1;
 	}
 
-	unsigned long long sigLen1 = 0L;
-	unsigned long long sigLen2 = 0L;
+	unsigned long long sigLen1 = 0;
+	unsigned long long sigLen2 = 0;
+
+	unsigned char sig1[64 + 64]; //CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN
+	unsigned char sig2[690 + 40 + 2 + 64]; //CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN
+	unsigned char sk1[64]; //CRYPTO_ED25519_SECRETKEY_BYTES
+	unsigned char sk2[1281]; //CRYPTO_FALCON_SECRETKEY_BYTES
+
+	//Copy sk1 from input
+	for (int i = 0;i < CRYPTO_ED25519_SECRETKEY_BYTES;i++) {
+		sk1[i] = sk[i];
+	}
+
+	//Copy sk2 from input
+	for (int i = 0;i < CRYPTO_FALCON_SECRETKEY_BYTES;i++) {
+		sk2[i] = sk[CRYPTO_ED25519_SECRETKEY_BYTES + i];
+	}
 
 	//Always call both sign operations, instead of exiting early from first on failure, to reduce risk from timing attacks if any
-	int r1 = crypto_sign_ed25519(sm + SIZE_LEN, &sigLen1, m, mlen, sk);
-	int r2 = crypto_sign_falcon(sm + SIZE_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + mlen, &sigLen2, m, mlen, sk + CRYPTO_ED25519_SECRETKEY_BYTES);
+	int r1 = crypto_sign_ed25519(sig1, &sigLen1, m, mlen, sk1);
+	int r2 = crypto_sign_falcon(sig2, &sigLen2, m, mlen, sk2);
 
-	if (r1 != 0 && r2 != 0) {
+	if (r1 != 0) {
 		return -2;
+	}
+
+	if (r2 != 0) {
+		return -3;
 	}
 
 	if (sigLen1 != CRYPTO_ED25519_SIGNATURE_BYTES + mlen) {
@@ -46,68 +137,144 @@ int crypto_sign_falcon_ed25519(unsigned char* sm, unsigned long long* smlen,
 		return -4;
 	}
 
+	//Set totalLen of sig, excluding LEN_BYTES
 	unsigned long long totalLen = sigLen1 + sigLen2;
 	sm[0] = (unsigned char)(totalLen >> 8);
 	sm[1] = (unsigned char)totalLen;
-	for (int i = sigLen1 + sigLen2;i < CRYPTO_FALCON_MAX_SIGNATURE_BYTES + mlen;i++) {
-		sm[i] = '0';
+
+	sm[2] = (unsigned char)(mlen >> 8);
+	sm[3] = (unsigned char)mlen;
+	
+	//Copy sig1 to output	
+	for (int i = 0;i < (int)sigLen1;i++) {
+		sm[LEN_BYTES + LEN_BYTES + i] = sig1[i];
 	}
 
-	*smlen = CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_FALCON_MAX_SIGNATURE_BYTES + SIZE_LEN + mlen + mlen;
+	//Copy sig2 to output	
+	for (int i = 0;i < (int)sigLen2;i++) {
+		sm[LEN_BYTES + LEN_BYTES + sigLen1 + i] = sig2[i];
+	}
+
+	//Set rest of bytes to zero
+	//todo: fix here and in verify
+	//for (int i = (int)(LEN_BYTES + totalLen);i < (int)(CRYPTO_HYBRID_MAX_SIGNATURE_BYTES + mlen + mlen);i++) {
+		//sm[i] = '0';
+	//}
+
+	*smlen = CRYPTO_HYBRID_MAX_SIGNATURE_BYTES_WITH_LEN + mlen + mlen;
 
 	return 0;
 
 }
 
-int crypto_sign_falcon_ed25519_open(unsigned char* m, unsigned long long mlen,
+int crypto_sign_falcon_ed25519_open(unsigned char* m, unsigned long long* mlen,
 	const unsigned char* sm, unsigned long long smlen,
 	const unsigned char* pk) {
 
-	if (m == NULL || mlen <= 0 || mlen > MAX_MSG_LEN || sm == NULL || smlen != CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_FALCON_MAX_SIGNATURE_BYTES + SIZE_LEN + mlen + mlen || pk == NULL) {
+	if (m == NULL || mlen == NULL || sm == NULL || smlen < SIZE_LEN + SIZE_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + MIN_MSG_LEN + CRYPTO_FALCON_MIN_SIGNATURE_BYTES + MIN_MSG_LEN ||
+		smlen > SIZE_LEN + SIZE_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN + CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN || pk == NULL) {
 		return -1;
 	}
 
-	unsigned long long totalLen = ((size_t)sm[0] << 8) | (size_t)sm[1];
-	if (totalLen < CRYPTO_HYBRID_MIN_SIGNATURE_BYTES + mlen + mlen) {
-		return totalLen;
+	int totalLen = ((size_t)sm[0] << 8) | (size_t)sm[1];
+	if (totalLen < CRYPTO_HYBRID_MIN_SIGNATURE_BYTES + MIN_MSG_LEN + MIN_MSG_LEN || totalLen > CRYPTO_HYBRID_MAX_SIGNATURE_BYTES + MAX_MSG_LEN + MAX_MSG_LEN) {
+		return -2;
 	}
-
-	unsigned char* msgFromSignature = malloc(smlen * sizeof(unsigned char));
-	unsigned long long msgLen1 = 0L;
-
-	int r1 = crypto_sign_ed25519_open(msgFromSignature, &msgLen1, sm + SIZE_LEN, CRYPTO_ED25519_SIGNATURE_BYTES + mlen, pk);
-	if (r1 != 0) {
+	int msgLen = ((size_t)sm[2] << 8) | (size_t)sm[3];
+	if (msgLen <= 0 || msgLen >= MAX_MSG_LEN) {
 		return -3;
 	}
 
-	if (msgLen1 != mlen) {
+	int sig1Len = CRYPTO_ED25519_SIGNATURE_BYTES + msgLen;
+	int sig2Len = totalLen - sig1Len;
+	if (sig2Len < CRYPTO_FALCON_MIN_SIGNATURE_BYTES || sig2Len > CRYPTO_FALCON_MAX_SIGNATURE_BYTES) {
+		return sig2Len;
+	}
+
+	unsigned char msgFromSignature1[64 + 64 + 32]; //MAX_MSG_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned long long msgFromSignatureLen1 = 0;
+	unsigned char msgFromSignature2[64]; //MAX_MSG_LEN
+	unsigned long long msgFromSignatureLen2 = 0;
+	unsigned char sig1[64 + 64]; //CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN
+	unsigned char sig2[690 + 40 + 2 + 64]; //CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN
+	unsigned char pk1[32]; //CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned char pk2[897]; //CRYPTO_FALCON_PUBLICKEY_BYTES
+
+	//Copy Sig1 from source
+	for (int i = 0;i < (int)sig1Len;i++) {
+		sig1[i] = sm[LEN_BYTES + LEN_BYTES + i];
+	}
+
+	//Copy pk1 from source
+	for (int i = 0;i < CRYPTO_ED25519_PUBLICKEY_BYTES;i++) {
+		pk1[i] = pk[i];
+	}
+
+	int r1 = crypto_sign_ed25519_open(msgFromSignature1, &msgFromSignatureLen1, sig1, sig1Len, pk1);
+	if (r1 != 0) {
 		return -4;
 	}
 
-	for (int i = 0;i < mlen;i++) {
-		if (msgFromSignature[i] != m[i]) {
-			return -5;
-		}
+	if ((int) msgFromSignatureLen1 != msgLen) {
+		return -5;
 	}
-	
-	memset(msgFromSignature, 0, smlen * sizeof(unsigned char));
-	msgLen1 = 0L;
 
-	unsigned long long sig2Len = totalLen - (CRYPTO_ED25519_SIGNATURE_BYTES + mlen);
-	int r2 = crypto_sign_falcon_open(msgFromSignature, &msgLen1, sm + SIZE_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + mlen, sig2Len, pk + CRYPTO_ED25519_PUBLICKEY_BYTES);
+	//Copy Sig2 from source
+	for (int i = 0;i < sig2Len;i++) {
+		sig2[i] = sm[LEN_BYTES + LEN_BYTES + sig1Len + i];
+	}
+
+	//Copy pk2 from source
+	for (int i = 0;i < CRYPTO_FALCON_PUBLICKEY_BYTES;i++) {
+		pk2[i] = pk[i + CRYPTO_ED25519_PUBLICKEY_BYTES];
+	}
+
+	int r2 = crypto_sign_falcon_open(msgFromSignature2, &msgFromSignatureLen2, sig2, sig2Len, pk2);
 	if (r2 != 0) {
 		return -6;
 	}
-	if (msgLen1 != mlen) {
+
+	if ((int) msgFromSignatureLen2 != msgLen) {
 		return -7;
 	}
 
-	for (int i = 0;i < mlen;i++) {
-		if (msgFromSignature[i] != m[i]) {
+	for (int i = 0;i < msgLen;i++) {
+		if (msgFromSignature1[i] != msgFromSignature2[i]) {
 			return -8;
+		}
+		m[i] = msgFromSignature1[i];
+	}
+
+	*mlen = msgLen;
+
+	return 0;
+}
+
+int crypto_verify_falcon_ed25519(unsigned char* m, unsigned long long mlen,
+	const unsigned char* sm, unsigned long long smlen,
+	const unsigned char* pk) {
+
+	if (m == NULL|| mlen <= 0 || mlen > MAX_MSG_LEN || sm == NULL || pk == NULL) {
+		return -1;
+	}
+	
+	unsigned char msgFromSignature1[64 + 64 + 32]; //MAX_MSG_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned long long msgFromSignatureLen1 = 0;
+
+	int r = crypto_sign_falcon_ed25519_open(msgFromSignature1, &msgFromSignatureLen1, sm, smlen, pk);
+	if (r != 0) {
+		return -2;
+	}
+
+	if (msgFromSignatureLen1 != mlen) {
+		return -3;
+	}
+
+	for (int i = 0;i < (int)msgFromSignatureLen1;i++) {
+		if (msgFromSignature1[i] != m[i]) {
+			return -4;
 		}
 	}
 
 	return 0;
 }
-

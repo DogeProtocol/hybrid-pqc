@@ -40,6 +40,7 @@ set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(FALCON_VERSION_TEXT "0.0.1-dev")
 set(FALCON_COMPILE_BUILD_TARGET "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_HOST_SYSTEM}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+#set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64")
@@ -133,7 +134,8 @@ endif()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-add_library(falcon SHARED falcon512/codec.c falcon512/common.c falcon512/fft.c falcon512/fpr.c falcon512/keygen.c falcon512/nist.c falcon512/rng.c falcon512/shake.c falcon512/sign.c falcon512/vrfy.c random/randombytes.c  "tweetnacl/tweetnacl.c"  "hybrid/hybrid.h" "hybrid/hybrid.c"   )
+add_library(falcon SHARED falcon512/codec.c falcon512/common.c falcon512/fft.c falcon512/fpr.c falcon512/keygen.c falcon512/nist.c falcon512/rng.c falcon512/shake.c falcon512/sign.c falcon512/vrfy.c random/randombytes.c  "tweetnacl/tweetnacl.c"  "hybrid/hybrid.h" "hybrid/hybrid.c")
+add_executable(hybridtest falcon512/codec.c falcon512/common.c falcon512/fft.c falcon512/fpr.c falcon512/keygen.c falcon512/nist.c falcon512/rng.c falcon512/shake.c falcon512/sign.c falcon512/vrfy.c random/randombytes.c  "tweetnacl/tweetnacl.c"  "hybrid/hybrid.h" "hybrid/hybrid.c" "tests/test_hybrid.c")
 
 set_target_properties(falcon
     PROPERTIES
@@ -143,6 +145,15 @@ set_target_properties(falcon
     SOVERSION 2
     # For Windows DLLs
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
+set_target_properties(hybridtest
+    PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    VERSION ${FALCON_VERSION_TEXT}
+    SOVERSION 2
+    # For Windows DLLs
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/exe")
 
 configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
   "${CMAKE_CURRENT_BINARY_DIR}/falconConfig.cmake"
