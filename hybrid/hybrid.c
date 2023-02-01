@@ -1,3 +1,38 @@
+/*
+ * Hybrid Post Quantum Cryptography Library
+ *
+ * ==========================(LICENSE BEGIN)============================
+ 
+The MIT License
+
+Copyright (c) 2023 Doge Protocol Community
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+ * ===========================(LICENSE END)=============================
+ * 
+ * WARNING! This is an experimental cryptography library. It is not ready for use yet in any production systems!!
+ * 
+ * 
+ */
+
+#include<stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
@@ -16,14 +51,16 @@ const int CRYPTO_ED25519_SIGNATURE_BYTES = 64;
 const int LEN_BYTES = 2;
 const int CRYPTO_FALCON_PUBLICKEY_BYTES = 897;
 const int CRYPTO_FALCON_SECRETKEY_BYTES = 1281;
+const int CRYPTO_FALCON_NONCE_LENGTH = 40;
 const int CRYPTO_FALCON_MIN_SIGNATURE_BYTES = 600 + 40 + 2; //Signature + Nonce + 2 for size
 const int CRYPTO_FALCON_MAX_SIGNATURE_BYTES = 690 + 40 + 2; //Signature + Nonce + 2 for size
 
 const int CRYPTO_HYBRID_SECRETKEY_BYTES = 64 + 1281;
 const int CRYPTO_HYBRID_SECRETKEY_WITH_FALCON_PUBLIC_KEY_BYTES = 64 + 1281 + 897; //ED25519 already contains public key
+const int CRYPTO_HYBRID_MAX_FALCON_BASE_SIGNATURE_BYTES = 690;
 const int CRYPTO_HYBRID_MIN_SIGNATURE_BYTES = 64 + 600 + 40 + 2;
 const int CRYPTO_HYBRID_MAX_SIGNATURE_BYTES = 64 + 690 + 40 + 2;
-const int CRYPTO_HYBRID_MAX_SIGNATURE_BYTES_WITH_LEN = 2 + 2 + 64 + 690 + 40 + 2;
+const int CRYPTO_HYBRID_MAX_SIGNATURE_BYTES_WITH_LEN = 2 + 2 + 64 + 40 + 690;
 
 /*
 Secret Key Length = 64 + 1281 + 897 = 3587
@@ -33,14 +70,30 @@ Layout of secret key:
 32 bytes             32 bytes             1281 bytes          897 bytes 
 ed25519 secret key | ed25519 public key | falcon secret key | falcon public key
 
+The following signature length includes implementation output, in addition to actual algorithm output.
 
-Signature Length = 2 + 2 + 64 + {1 to 64} + {600 to 690} + 40 + 2 + {1 to 64} + {Padding} = 800 + (MSG_LEN * 2)
-================================================================================================================
+
+Layout of ED25519 signature
+============================
+
+64 bytes          | {1 to 64 bytes}  
+ed25519 Signature | Message
+
+
+Layout of Falcon signature
+============================
+2 bytes                         | 40 bytes     |  {1 to 64 bytes} | {600 to 690 bytes}
+falcon internal size big-endian | falcon nonce |  actual message  | falcon signature   
+
+
+Hybrid Signature Length = 2 + 2 + 64 + {1 to 64} + {600 to 690} + 40 + 2 + {1 to 64} + {Padding} = 800 + (MSG_LEN * 2)
+=======================================================================================================================
 Layout of signature:
 
 
-2 bytes                                           2 bytes                        64 bytes            {1 to 64 bytes}    2 bytes                           40 bytes        {1 to 64 bytes}   {600 to 690 bytes}   {690 - falcon signature}                
-length of ed25519 + falcon signature big-endian | length of message big-endian | ed25519 signature | actual message  |  falcon internal size big-endian | falcon nonce |  actual message  | falcon signature   | falcon signature padding
+2 bytes                                         | 2 bytes                      | 64 bytes          | {1 to 64 bytes} | 40 bytes     |  {600 to 690 bytes} | {690 - falcon signature length}
+length of ed25519 + falcon signature big-endian | length of message big-endian | ed25519 signature | actual message  | falcon nonce |  falcon signature   | falcon signature padding with 0's
+
 
 The first 2 bytes contain signature length of ed25519, falcon including the falcon nonce and internal size, in big-endian order
 The second 2 bytes contain the message length in big-endian order
@@ -144,24 +197,29 @@ int crypto_sign_falcon_ed25519(unsigned char* sm, unsigned long long* smlen,
 
 	sm[2] = (unsigned char)(mlen >> 8);
 	sm[3] = (unsigned char)mlen;
-	
-	//Copy sig1 to output	
+
+	//Copy ed25519 signature including the message, to output	
 	for (int i = 0;i < (int)sigLen1;i++) {
 		sm[LEN_BYTES + LEN_BYTES + i] = sig1[i];
 	}
 
-	//Copy sig2 to output	
-	for (int i = 0;i < (int)sigLen2;i++) {
-		sm[LEN_BYTES + LEN_BYTES + sigLen1 + i] = sig2[i];
+	//Copy Falcon nonce to output, exclude the 2 bytes for size
+	for (int i = 0;i < CRYPTO_FALCON_NONCE_LENGTH;i++) {
+		sm[LEN_BYTES + LEN_BYTES + sigLen1 + i] = sig2[LEN_BYTES + i];
+	}
+
+	//Copy the Falcon signature, excluding the message, to the output
+	for (int i = 0;i < (int) sigLen2 - LEN_BYTES - CRYPTO_FALCON_NONCE_LENGTH;i++) {
+		sm[LEN_BYTES + LEN_BYTES + sigLen1 + CRYPTO_FALCON_NONCE_LENGTH + i] = sig2[LEN_BYTES + CRYPTO_FALCON_NONCE_LENGTH + mlen + i];
 	}
 
 	//Set rest of bytes to zero
-	//todo: fix here and in verify
-	//for (int i = (int)(LEN_BYTES + totalLen);i < (int)(CRYPTO_HYBRID_MAX_SIGNATURE_BYTES + mlen + mlen);i++) {
-		//sm[i] = '0';
-	//}
+	int sigLenWithoutMeta = sigLen2 - LEN_BYTES - CRYPTO_FALCON_NONCE_LENGTH - mlen;
+	for (int i = 0;i < CRYPTO_HYBRID_MAX_FALCON_BASE_SIGNATURE_BYTES - sigLenWithoutMeta;i++) {
+		sm[LEN_BYTES + LEN_BYTES + sigLen1 + CRYPTO_FALCON_NONCE_LENGTH + sigLenWithoutMeta + i] = '0';
+	}
 
-	*smlen = CRYPTO_HYBRID_MAX_SIGNATURE_BYTES_WITH_LEN + mlen + mlen;
+	*smlen = CRYPTO_HYBRID_MAX_SIGNATURE_BYTES_WITH_LEN + mlen;
 
 	return 0;
 
@@ -196,11 +254,11 @@ int crypto_sign_falcon_ed25519_open(unsigned char* m, unsigned long long* mlen,
 	unsigned char msgFromSignature2[64]; //MAX_MSG_LEN
 	unsigned long long msgFromSignatureLen2 = 0;
 	unsigned char sig1[64 + 64]; //CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN
-	unsigned char sig2[690 + 40 + 2 + 64]; //CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN
+	unsigned char sig2[2 + 40 + 64 + 690]; //SIZE_LEN + CRYPTO_FALCON_NONCE_LENGTH + CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN
 	unsigned char pk1[32]; //CRYPTO_ED25519_PUBLICKEY_BYTES
 	unsigned char pk2[897]; //CRYPTO_FALCON_PUBLICKEY_BYTES
 
-	//Copy Sig1 from source
+	//Copy Sig1 from source, including message
 	for (int i = 0;i < (int)sig1Len;i++) {
 		sig1[i] = sm[LEN_BYTES + LEN_BYTES + i];
 	}
@@ -219,15 +277,31 @@ int crypto_sign_falcon_ed25519_open(unsigned char* m, unsigned long long* mlen,
 		return -5;
 	}
 
-	//Copy Sig2 from source
-	for (int i = 0;i < sig2Len;i++) {
-		sig2[i] = sm[LEN_BYTES + LEN_BYTES + sig1Len + i];
+	//Copy Falon size into sig2 (big-endian)
+	int actualSig2Len = sig2Len - LEN_BYTES - CRYPTO_FALCON_NONCE_LENGTH - msgLen;
+	sig2[0] = (unsigned char)(actualSig2Len >> 8);
+	sig2[1] = (unsigned char)actualSig2Len;
+
+	//Copy Falcon nonce into sig2
+	for (int i = 0;i < CRYPTO_FALCON_NONCE_LENGTH;i++) {
+		sig2[LEN_BYTES + i] = sm[LEN_BYTES + LEN_BYTES + sig1Len + i];
+	}
+
+	//Copy Message info sig2
+	for (int i = 0;i < msgLen;i++) {
+		sig2[LEN_BYTES + CRYPTO_FALCON_NONCE_LENGTH + i] = sm[LEN_BYTES + LEN_BYTES + CRYPTO_ED25519_SIGNATURE_BYTES + i];
+	}
+
+	//Copy actual Sig2 from source
+	for (int i = 0;i < sig2Len - LEN_BYTES - CRYPTO_FALCON_NONCE_LENGTH - msgLen;i++) {
+		sig2[LEN_BYTES + CRYPTO_FALCON_NONCE_LENGTH + msgLen + i] = sm[LEN_BYTES + LEN_BYTES + sig1Len + CRYPTO_FALCON_NONCE_LENGTH + i];
 	}
 
 	//Copy pk2 from source
 	for (int i = 0;i < CRYPTO_FALCON_PUBLICKEY_BYTES;i++) {
 		pk2[i] = pk[i + CRYPTO_ED25519_PUBLICKEY_BYTES];
 	}
+
 
 	int r2 = crypto_sign_falcon_open(msgFromSignature2, &msgFromSignatureLen2, sig2, sig2Len, pk2);
 	if (r2 != 0) {
@@ -243,6 +317,14 @@ int crypto_sign_falcon_ed25519_open(unsigned char* m, unsigned long long* mlen,
 			return -8;
 		}
 		m[i] = msgFromSignature1[i];
+	}
+
+	//Verify that rest of bytes are zero
+	int sigLenWithoutMeta = sig2Len - LEN_BYTES - CRYPTO_FALCON_NONCE_LENGTH - msgLen;
+	for (int i = 0;i < CRYPTO_HYBRID_MAX_FALCON_BASE_SIGNATURE_BYTES - sigLenWithoutMeta;i++) {
+		if (sm[LEN_BYTES + LEN_BYTES + sig1Len + CRYPTO_FALCON_NONCE_LENGTH + sigLenWithoutMeta + i] != '0') {
+			return -9;
+		}
 	}
 
 	*mlen = msgLen;

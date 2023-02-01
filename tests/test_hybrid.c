@@ -9,8 +9,8 @@
 #include "../hybrid/hybrid.h"
 #include "../falcon512/api.h"
 
-int test_falcon_simple(void);
-int test_simple(void);
+int test_falcon(void);
+int test_hybrid(void);
 int test_multiple(int count);
 int main(void);
 
@@ -19,10 +19,12 @@ const unsigned long long FALCON_PUBLICKEY_BYTES = 897UL;
 const unsigned long long HYBRID_PUBLICKEY_BYTES = 897UL + 32UL;
 
 
-int test_falcon_simple() {
-	unsigned char pk[32 + 897];
-	unsigned char sk[64 + 1281];
-	unsigned char sig[2 + 2 + 64 + 690 + 40 + 2 + 32 + 32];
+int test_falcon() {
+	printf("\n test_falcon() start");
+
+	unsigned char pk[897];
+	unsigned char sk[1281];
+	unsigned char sig[690 + 40 + 2 + 32];
 	unsigned char msg1[32];
 	unsigned char msg2[32];
 	unsigned long long sigLen = 0;
@@ -48,6 +50,8 @@ int test_falcon_simple() {
 		return r3;
 	}
 
+	printf("\n falcon sigLen = %d", (int) sigLen);
+
 	unsigned long long msgLen = 0;
 	int r4 = crypto_sign_falcon_open(msg2, &msgLen, sig, sigLen, pk);
 	if (r4 != 0) {
@@ -66,16 +70,18 @@ int test_falcon_simple() {
 		}
 	}
 
+	printf("\n test_falcon() ok");
+
 	return 0;
 }
 
-int test_simple() {
-	printf("\n test_simple() start");
+int test_hybrid() {
+	printf("\n test_hybrid() start");
 
 	unsigned char pk[32 + 897];
 	unsigned char sk[64 + 1281];
-	unsigned char sig1[2 + 2 + 64 + 690 + 40 + 2 + 32 + 32];
-	unsigned char sig2[2 + 2 + 64 + 690 + 40 + 2 + 32 + 32];
+	unsigned char sig1[2 + 2 + 64 + 690 + 40 + 32];
+	unsigned char sig2[2 + 2 + 64 + 690 + 40 + 32 ];
 	unsigned char msg1[32];
 	unsigned char msg2[32];
 	unsigned char msg1output[32];
@@ -104,7 +110,7 @@ int test_simple() {
 		return -3;
 	}
 
-	if (sigLen1 != 864) {
+	if (sigLen1 != 830) {
 		printf("\n crypto_sign_falcon_ed25519 sigLen error %d", (int)sigLen1);
 		return -4;
 	}
@@ -145,7 +151,7 @@ int test_simple() {
 		return -10;
 	}
 
-	if (sigLen2 != 864) {
+	if (sigLen2 != 830) {
 		printf("\n crypto_sign_falcon_ed25519 sigLen error %d", (int)sigLen2);
 		return -11;
 	}
@@ -183,10 +189,36 @@ int test_simple() {
 		return -16;
 	}
 
+	sig2[69] = msg2[1]; //reset
+	r = crypto_sign_falcon_ed25519_open(msg2output, &msgLen2, sig2, sigLen2, pk);
+	if (r != 0) {
+		printf("\n crypto_sign_falcon_ed25519_open failed %d", (int)r);
+		return -17;
+	}
+
+	sig2[69] = sig2[69] + 1; //first byte of message in ed25519 signature
 	r = crypto_verify_falcon_ed25519(msg2output, MSG_LEN, sig2, sigLen2, pk);
 	if (r == 0) {
 		printf("\n crypto_verify_falcon_ed25519 was ok when it should have failed %d", (int)r);
-		return -17;
+		return -18;
+	}
+
+	sig2[69] = msg2[1]; //reset
+	r = crypto_sign_falcon_ed25519_open(msg2output, &msgLen2, sig2, sigLen2, pk);
+	if (r != 0) {
+		printf("\n crypto_sign_falcon_ed25519_open failed %d", (int)r);
+		return -19;
+	}
+
+	int totalLen = ((size_t)sig2[0] << 8) | (size_t)sig2[1];
+	if (totalLen < 828) {
+		sig2[829] = 1; //padding reset check
+
+		r = crypto_sign_falcon_ed25519_open(msg2output, &msgLen2, sig2, sigLen2, pk);
+		if (r == 0) {
+			printf("\n crypto_sign_falcon_ed25519_open was ok when it should have failed %d", (int)r);
+			return -20;
+		}
 	}
 
 	sig2[69] = msg2[1]; //reset
@@ -194,28 +226,28 @@ int test_simple() {
 	r = crypto_sign_falcon_ed25519_open(msg2output, &msgLen2, sig2, sigLen2, pk);
 	if (r == 0) {
 		printf("\n crypto_sign_falcon_ed25519_open was ok when it should have failed %d", (int)r);
-		return -18;
+		return -21;
 	}
 
 	msg2[0] = msg2[0] + 1;
 	r = crypto_verify_falcon_ed25519(msg2, MSG_LEN, sig2, sigLen2, pk);
 	if (r == 0) {
 		printf("\n crypto_sign_falcon_ed25519_open was ok when it should have failed %d", (int)r);
-		return -18;
+		return -22;
 	}
 
 
 	//todo add fuzz tests
 
-	printf(" \n test_simple() ok");
+	printf(" \n test_hybrid() ok");
 
 	return 0;
 }
 
 int test_multiple(int count) {
-	printf("\n test_simple %d", count);
+	printf("\n test_multiple hybrid %d", count);
 	for (int i = 0;i < count;i++) {
-		int r = test_simple();
+		int r = test_hybrid();
 		if (r != 0) {
 			return 2;
 		}
@@ -224,12 +256,12 @@ int test_multiple(int count) {
 }
 
 int main() {
-	int r0 = test_falcon_simple();
+	int r0 = test_falcon();
 	if (r0 != 0) {
 		return r0;
 	}
 
-	int r1 = test_simple();
+	int r1 = test_hybrid();
 	if (r1 != 0) {
 		return r1;
 	}
