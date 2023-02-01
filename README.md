@@ -19,13 +19,18 @@ Some disadvantages of the hybrid model are increased complexity, increased compu
 storage, and bandwidth requirements. However, the security benefits of the 
 hybrid model outweigh these disadvantages.
 
+### Warning
+This is test software, not yet ready for production use. Do not use in production systems.
+
 ## Falcon
 Falcon is a Post Quantum Digital Signature Scheme that has been standardized by NIST.
-This repository is based on the [Round 3](https://csrc.nist.gov/Projects/post-quantum-cryptography/post-quantum-cryptography-standardization/round-3-submissions) submission of Falcon. 
+This repository is based on the Falcon512 reference imlpementation at [Round 3](https://csrc.nist.gov/Projects/post-quantum-cryptography/post-quantum-cryptography-standardization/round-3-submissions) submission of Falcon. 
 
 ## EdDSA
-The classical digital signature algorithm used is EdDSA (ed25519) 
-(https://tweetnacl.cr.yp.to/)
+The classical digital signature algorithm used is EdDSA (ed25519). The implementation used is [TweetNaCl](https://tweetnacl.cr.yp.to/), a self-contained public-domain C library. (https://tweetnacl.cr.yp.to/)
+
+## Randombytes
+The random implementation is based on (https://github.com/dsprenkels/randombytes), which itself is based on libsodium randombytes.
 
 ### Source
 [https://csrc.nist.gov/CSRC/media/Projects/post-quantum-cryptography/documents/round-3/submissions/Falcon-Round3.zip](https://csrc.nist.gov/CSRC/media/Projects/post-quantum-cryptography/documents/round-3/submissions/Falcon-Round3.zip)
