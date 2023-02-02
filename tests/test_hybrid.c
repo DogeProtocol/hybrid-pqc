@@ -23,7 +23,7 @@ int test_falcon() {
 	printf("\n test_falcon() start");
 
 	unsigned char pk[897];
-	unsigned char sk[1281];
+	unsigned char sk[1281 + 897];
 	unsigned char sig[690 + 40 + 2 + 32];
 	unsigned char msg1[32];
 	unsigned char msg2[32];
@@ -79,7 +79,7 @@ int test_hybrid() {
 	printf("\n test_hybrid() start");
 
 	unsigned char pk[32 + 897];
-	unsigned char sk[64 + 1281];
+	unsigned char sk[64 + 1281 + 897];
 	unsigned char sig1[2 + 2 + 64 + 690 + 40 + 32];
 	unsigned char sig2[2 + 2 + 64 + 690 + 40 + 32 ];
 	unsigned char msg1[32];

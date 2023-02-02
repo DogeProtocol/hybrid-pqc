@@ -51,10 +51,12 @@ const int CRYPTO_ED25519_SIGNATURE_BYTES = 64;
 const int LEN_BYTES = 2;
 const int CRYPTO_FALCON_PUBLICKEY_BYTES = 897;
 const int CRYPTO_FALCON_SECRETKEY_BYTES = 1281;
+const int CRYPTO_FALCON_SECRETKEY_WITH_PUBLIC_KEY_BYTES = 1281 + 897;
 const int CRYPTO_FALCON_NONCE_LENGTH = 40;
 const int CRYPTO_FALCON_MIN_SIGNATURE_BYTES = 600 + 40 + 2; //Signature + Nonce + 2 for size
 const int CRYPTO_FALCON_MAX_SIGNATURE_BYTES = 690 + 40 + 2; //Signature + Nonce + 2 for size
 
+const int CRYPTO_HYBRID_PUBLICKEY_BYTES = 32 + 897;
 const int CRYPTO_HYBRID_SECRETKEY_BYTES = 64 + 1281;
 const int CRYPTO_HYBRID_SECRETKEY_WITH_FALCON_PUBLIC_KEY_BYTES = 64 + 1281 + 897; //ED25519 already contains public key
 const int CRYPTO_HYBRID_MAX_FALCON_BASE_SIGNATURE_BYTES = 690;
@@ -102,17 +104,16 @@ Falcon Signature is variable length, between 600 to 690. To give predicatable le
 
 */
 
-const int CRYPTO_HYBRID_PUBLICKEY_BYTES = 897 + 32;
-
 int crypto_sign_falcon_ed25519_keypair(unsigned char* pk, unsigned char* sk) {
 	if (pk == NULL || sk == NULL) {
 		return -1;
 	}
 
+	
 	unsigned char pk1[32]; //CRYPTO_ED25519_PUBLICKEY_BYTES
 	unsigned char sk1[64]; //CRYPTO_ED25519_SECRETKEY_BYTES
 	unsigned char pk2[897]; //CRYPTO_FALCON_PUBLICKEY_BYTES
-	unsigned char sk2[1281]; //CRYPTO_FALCON_SECRETKEY_BYTES
+	unsigned char sk2[1281 + 897]; //CRYPTO_FALCON_SECRETKEY_BYTES
 
 	int r1 = crypto_sign_ed25519_keypair(pk1, sk1);
 	if (r1 != 0) {
@@ -133,13 +134,15 @@ int crypto_sign_falcon_ed25519_keypair(unsigned char* pk, unsigned char* sk) {
 		return -3;
 	}
 
-	for (int i = 0;i < CRYPTO_FALCON_PUBLICKEY_BYTES;i++) {
-		pk[CRYPTO_ED25519_PUBLICKEY_BYTES + i] = pk2[i];
-	}
-
 	for (int i = 0;i < CRYPTO_FALCON_SECRETKEY_BYTES;i++) {
 		sk[CRYPTO_ED25519_SECRETKEY_BYTES + i] = sk2[i];
 	}
+
+	for (int i = 0;i < CRYPTO_FALCON_PUBLICKEY_BYTES;i++) {
+		pk[CRYPTO_ED25519_PUBLICKEY_BYTES + i] = pk2[i];
+		sk[CRYPTO_ED25519_SECRETKEY_BYTES + CRYPTO_FALCON_SECRETKEY_BYTES + i] = pk2[i]; //copy public key
+	}
+	
 
 	return 0;
 }
@@ -165,7 +168,7 @@ int crypto_sign_falcon_ed25519(unsigned char* sm, unsigned long long* smlen,
 		sk1[i] = sk[i];
 	}
 
-	//Copy sk2 from input
+	//Copy sk2 from input (skip public key part of it)
 	for (int i = 0;i < CRYPTO_FALCON_SECRETKEY_BYTES;i++) {
 		sk2[i] = sk[CRYPTO_ED25519_SECRETKEY_BYTES + i];
 	}

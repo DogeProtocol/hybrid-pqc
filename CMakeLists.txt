@@ -23,7 +23,7 @@ if(POLICY CMP0067)
 endif()
 
 
-project(falcon C ASM)
+project(hybridpqc C ASM)
 
 
 option(OQS_DIST_BUILD "Build distributable library with optimized code for several CPU microarchitectures. Enables run-time CPU feature detection." ON)
@@ -37,10 +37,9 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
-set(FALCON_VERSION_TEXT "0.0.1-dev")
-set(FALCON_COMPILE_BUILD_TARGET "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_HOST_SYSTEM}")
+set(HYBRIDPQC_VERSION_TEXT "0.0.1-dev")
+set(HYBRIDPQC_COMPILE_BUILD_TARGET "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_HOST_SYSTEM}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-#set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64")
@@ -112,7 +111,7 @@ endif()
 option(OQS_SPEED_USE_ARM_PMU "Use ARM Performance Monitor Unit during benchmarking" OFF)
 set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_VENDOR "www.dogeprotocol.org")
-set(CPACK_PACKAGE_VERSION ${FALCON_VERSION_TEXT})
+set(CPACK_PACKAGE_VERSION ${HYBRIDPQC_VERSION_TEXT})
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6")
 
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "www.dogeprotocol.org")
@@ -124,75 +123,74 @@ if(WIN32)
 endif()
 
 include(.CMake/compiler_opts.cmake)
-include(.CMake/alg_support.cmake)
 
 if(DEFINED SANITIZER_LD_FLAGS)
-    target_link_libraries(falcon PUBLIC ${SANITIZER_LD_FLAGS})
+    target_link_libraries(hybridpqc PUBLIC ${SANITIZER_LD_FLAGS})
 endif()
 
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-add_library(falcon SHARED falcon512/codec.c falcon512/common.c falcon512/fft.c falcon512/fpr.c falcon512/keygen.c falcon512/nist.c falcon512/rng.c falcon512/shake.c falcon512/sign.c falcon512/vrfy.c random/randombytes.c  "tweetnacl/tweetnacl.c"  "hybrid/hybrid.h" "hybrid/hybrid.c")
-add_executable(hybridtest falcon512/codec.c falcon512/common.c falcon512/fft.c falcon512/fpr.c falcon512/keygen.c falcon512/nist.c falcon512/rng.c falcon512/shake.c falcon512/sign.c falcon512/vrfy.c random/randombytes.c  "tweetnacl/tweetnacl.c"  "hybrid/hybrid.h" "hybrid/hybrid.c" "tests/test_hybrid.c")
+add_library(hybridpqc SHARED falcon512/codec.c falcon512/common.c falcon512/fft.c falcon512/fpr.c falcon512/keygen.c falcon512/nist.c falcon512/rng.c falcon512/shake.c falcon512/sign.c falcon512/vrfy.c random/randombytes.c  "tweetnacl/tweetnacl.c"  "hybrid/hybrid.h" "hybrid/hybrid.c")
+add_executable(hybridpqctest falcon512/codec.c falcon512/common.c falcon512/fft.c falcon512/fpr.c falcon512/keygen.c falcon512/nist.c falcon512/rng.c falcon512/shake.c falcon512/sign.c falcon512/vrfy.c random/randombytes.c  "tweetnacl/tweetnacl.c"  "hybrid/hybrid.h" "hybrid/hybrid.c" "tests/test_hybrid.c")
 
-set_target_properties(falcon
+set_target_properties(hybridpqc
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    VERSION ${FALCON_VERSION_TEXT}
+    VERSION ${HYBRIDPQC_VERSION_TEXT}
     SOVERSION 2
     # For Windows DLLs
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
-set_target_properties(hybridtest
+set_target_properties(hybridpqctest
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    VERSION ${FALCON_VERSION_TEXT}
+    VERSION ${HYBRIDPQC_VERSION_TEXT}
     SOVERSION 2
     # For Windows DLLs
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/exe")
 
 configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
-  "${CMAKE_CURRENT_BINARY_DIR}/falconConfig.cmake"
-  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/falcon
+  "${CMAKE_CURRENT_BINARY_DIR}/hybridpqcConfig.cmake"
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hybridpqc
 )
 
 # generate the version file for the config file
 write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/falconConfigVersion.cmake"
-  VERSION "${FALCON_VERSION_TEXT}"
+  "${CMAKE_CURRENT_BINARY_DIR}/hybridpqcConfigVersion.cmake"
+  VERSION "${HYBRIDPQC_VERSION_TEXT}"
   COMPATIBILITY AnyNewerVersion
 )
 
 install(FILES
-          "${CMAKE_CURRENT_BINARY_DIR}/falconConfig.cmake"
-          "${CMAKE_CURRENT_BINARY_DIR}/falconConfigVersion.cmake"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/falcon"
+          "${CMAKE_CURRENT_BINARY_DIR}/hybridpqcConfig.cmake"
+          "${CMAKE_CURRENT_BINARY_DIR}/hybridpqcConfigVersion.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hybridpqc"
 )
 
-install(TARGETS falcon
-        EXPORT falconTargets
+install(TARGETS hybridpqc
+        EXPORT hybridpqcTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/falcon
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hybridpqc
 )
 
-install(EXPORT falconTargets
-        FILE falconTargets.cmake
-        NAMESPACE Falcon::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/falcon
+install(EXPORT hybridpqcTargets
+        FILE hybridpqcTargets.cmake
+        NAMESPACE Hybridpqc::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hybridpqc
 )
 
 install(FILES ${PUBLIC_HEADERS}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/falcon)
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hybridpqc)
 
-export(EXPORT falconTargets
-       FILE "${CMAKE_CURRENT_BINARY_DIR}/cmake/falconTargets.cmake"
-       NAMESPACE Falcon::
+export(EXPORT hybridpqcTargets
+       FILE "${CMAKE_CURRENT_BINARY_DIR}/cmake/hybridpqcTargets.cmake"
+       NAMESPACE Hybridpqc::
 )
 
 
@@ -211,15 +209,15 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wconversion)
 endif()
 
-set(FALCON_HEADERS ${PROJECT_SOURCE_DIR}/falcon512/api.h
+set(HYBRIDPQC_HEADERS ${PROJECT_SOURCE_DIR}/falcon512/api.h
                    ${PROJECT_SOURCE_DIR}/falcon512/fpr.h
                    ${PROJECT_SOURCE_DIR}/falcon512/inner.h
                    ${PROJECT_SOURCE_DIR}/tweetnacl/tweetnacl.h
                    ${PROJECT_SOURCE_DIR}/hybrid/hybrid.h
                    ${PROJECT_SOURCE_DIR}/random/randombytes.h)
 
-install(FILES ${FALCON_HEADERS}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/falcon)
+install(FILES ${HYBRIDPQC_HEADERS}
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hybridpqc)
 
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/falcon)
-execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${FALCON_HEADERS} ${PROJECT_BINARY_DIR}/include/falcon)
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/hybridpqc)
+execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS} ${PROJECT_BINARY_DIR}/include/hybridpqc)
