@@ -45,6 +45,7 @@ The random implementation is based on (https://github.com/dsprenkels/randombytes
 
 	On Ubuntu:
 
+		 apt-get update
 		 sudo apt install astyle cmake gcc ninja-build libssl-dev python3-pytest python3-pytest-xdist unzip xsltproc doxygen graphviz python3-yaml
 
 	On macOS, using a package manager of your choice (we've picked Homebrew):
