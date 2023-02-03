@@ -2,22 +2,35 @@
 #pragma warning(disable : 4244 4293)
 #endif
 
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 #include "../random/randombytes.h"
 #include "../hybrid/hybrid.h"
 #include "../falcon512/api.h"
 
+clock_t get_nano_sec(void);
+void print_elapsed(long startTime, long endTime);
 int test_falcon(void);
 int test_hybrid(void);
 int test_multiple(int count);
-int main(void);
+int main(int argc, char* argv[]);
 
 const unsigned long long ED25519_PUBLICKEY_BYTES = 32UL;
 const unsigned long long FALCON_PUBLICKEY_BYTES = 897UL;
 const unsigned long long HYBRID_PUBLICKEY_BYTES = 897UL + 32UL;
 
+clock_t get_nano_sec(void) {
+	return clock();
+}
+
+void print_elapsed(clock_t startTime, clock_t endTime) {
+	clock_t elapsed = endTime - startTime;
+	double time_taken = ((double)elapsed) / CLOCKS_PER_SEC; // in seconds
+	printf("\n elapsed = %f seconds", time_taken);
+}
 
 int test_falcon() {
 	printf("\n test_falcon() start");
@@ -75,13 +88,89 @@ int test_falcon() {
 	return 0;
 }
 
+int test_hybrid_perf(int count) {
+	unsigned char pk[32 + 897];
+	unsigned char sk[64 + 1281 + 897];
+	unsigned char msg[32];
+	unsigned char sig[2 + 2 + 64 + 690 + 40 + 32];
+	unsigned long long sigLen = 0;
+	const int MSG_LEN = 32;
+	unsigned char msgOutput[32];
+	unsigned long long msgOutputLen = 0;
+	clock_t startTime;
+	clock_t endTime;
+	int r = 0;
+
+	printf("\n Hybrid Generate KeyPair Perf Test for %d iterations", count);
+	startTime = get_nano_sec();
+	for (int i = 0;i < count;i++) {
+		r = crypto_sign_falcon_ed25519_keypair(pk, sk);
+		if (r != 0) {
+			printf("\n crypto_sign_falcon_ed25519_keypair failed %d", (int)r);
+			return -1;
+		}
+	}
+	endTime = get_nano_sec();
+	print_elapsed(startTime, endTime);
+
+	r = randombytes(msg, MSG_LEN * sizeof(unsigned char));
+	if (r != 0) {
+		printf("\n randombytes failed %d", (int)r);
+		return -2;
+	}
+
+	printf("\n Hybrid Sign Perf Test for %d iterations", count);
+	startTime = get_nano_sec();
+	for (int i = 0;i < count;i++) {
+		r = crypto_sign_falcon_ed25519(sig, &sigLen, msg, MSG_LEN, sk);
+		if (r != 0) {
+			printf("\n crypto_sign_falcon_ed25519 failed %d iteration %d", (int)r, i);
+			return -3;
+		}
+	}
+	endTime = get_nano_sec();
+	print_elapsed(startTime, endTime);
+
+	r = crypto_sign_falcon_ed25519(sig, &sigLen, msg, MSG_LEN, sk);
+	if (r != 0) {
+		printf("\n crypto_sign_falcon_ed25519 failed %d", (int)r);
+		return -4;
+	}
+
+	printf("\n Hybrid SignOpen Perf Test for %d iterations", count);
+	startTime = get_nano_sec();
+	for (int i = 0;i < count;i++) {
+		r = crypto_sign_falcon_ed25519_open(msgOutput, &msgOutputLen, sig, sigLen, pk);
+		if (r != 0) {
+			printf("\n crypto_sign_falcon_ed25519_open failed %d", (int)r);
+			return -5;
+		}
+	}
+	endTime = get_nano_sec();
+	print_elapsed(startTime, endTime);
+
+	printf("\n Hybrid Verify Perf Test for %d iterations", count);
+	startTime = get_nano_sec();
+	for (int i = 0;i < count;i++) {
+		r = crypto_verify_falcon_ed25519(msg, MSG_LEN, sig, sigLen, pk);
+		if (r != 0) {
+			printf("\n crypto_verify_falcon_ed25519 failed %d", (int)r);
+			return -6;
+		}
+	}
+	endTime = get_nano_sec();
+	print_elapsed(startTime, endTime);
+
+	return 0;
+}
+
 int test_hybrid() {
 	printf("\n test_hybrid() start");
 
 	unsigned char pk[32 + 897];
 	unsigned char sk[64 + 1281 + 897];
 	unsigned char sig1[2 + 2 + 64 + 690 + 40 + 32];
-	unsigned char sig2[2 + 2 + 64 + 690 + 40 + 32 ];
+	unsigned char sig2[2 + 2 + 64 + 690 + 40 + 32];
 	unsigned char msg1[32];
 	unsigned char msg2[32];
 	unsigned char msg1output[32];
@@ -255,7 +344,7 @@ int test_multiple(int count) {
 	return 0;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
 	int r0 = test_falcon();
 	if (r0 != 0) {
 		return r0;
@@ -266,11 +355,18 @@ int main() {
 		return r1;
 	}
 
-	int count = 100;
+	int count = 10;
 	int r3 = test_multiple(count);
 	if (r3 != 0) {
 		return r3;
 	}
+
+	int perfCount = 1000;
+	if (argc > 1) {
+		perfCount = atoi(argv[1]);
+	}
+	test_hybrid_perf(perfCount);
+	printf("\n Warning, perf tests uses approximate system clock. Is not suitable for fewer iterations of test.");
 
 	printf(" \n test suite completed!");
 

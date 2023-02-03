@@ -4,14 +4,14 @@
 #define CRYPTO_ALGNAME          "Falcon-512"
 
 #if defined(_WIN32)
-#define FALCON_API __declspec(dllexport)
+#define HYBRIDPQC_API __declspec(dllexport)
 #else
-#define FALCON_API __attribute__((visibility("default")))
+#define HYBRIDPQC_API __attribute__((visibility("default")))
 #endif
 
-#if defined(OQS_SYS_UEFI)
-#undef FALCON_API
-#define FALCON_API
+#if defined(HYBRIDPQC_SYS_UEFI)
+#undef HYBRIDPQC_API
+#define HYBRIDPQC_API
 #endif
 
 
