@@ -1,13 +1,13 @@
 # Hybrid Post Quantum Cryptography
-While both Falcon and Dilithium have been standardized, these two Digital Signature Schemes schemes haven’t 
-been battle-tested widely. It's possible that newer category of attacks on Lattice based cryptography may come to light.
+While lattice based post-quantum cryptography schemes such as Falcon and Dilithium have been standardized, they haven’t 
+been battle-tested widely over the years like RSA and Elliptic Curve vased crypto-schemes. It's possible that newer category of attacks on Lattice based cryptography may come to light.
 
 Because of these reasons, it's preferable to use a hybrid signature scheme that 
-uses two crypto schemes behind the scenes: a PQC scheme and a classical scheme (ECDSA). This hybrid 
-model is required to provide a hedge against Falcon or Dilithium getting broken 
+uses two crypto schemes behind the scenes: a PQC scheme and a classical scheme (EdDSA). This hybrid 
+model is required to provide a hedge against Lattice based cryptography schemes such as Falcon getting broken 
 on classical computers in the interim. 
 
-When quantum computers capable enough to break ECDSA become available, the hybrid model 
+When quantum computers capable enough to break EdDSA become available, the hybrid model 
 will still provide protection against quantum computer attacks, since a post quantum crypto scheme is used in the hybrid model. 
 
 This hybrid model will be abstracted away so that users do not have to worry 
@@ -15,12 +15,11 @@ about managing two sets of keys. To users, it will be just one composite key to 
 use. Likewise, higher-level developers do not have to worry about the hybrid 
 model, since it will be abstracted away.
 
-Some disadvantages of the hybrid model are increased complexity, increased compute time, increased 
-storage, and bandwidth requirements. However, the security benefits of the 
-hybrid model outweigh these disadvantages.
+Some disadvantages of the hybrid model are increased complexity, increased risk of implementation bugs, increased compute time, increased 
+storage, and bandwidth requirements. However, the security benefits of the hybrid model outweigh these disadvantages.
 
 ### Warning
-This is test software, not yet ready for production use. Do not use in production systems.
+This is test software, not yet ready for production use. Do not use in production systems!
 
 ## Falcon
 Falcon is a Post Quantum Digital Signature Scheme that has been standardized by NIST.
@@ -115,3 +114,4 @@ Thank you for considering to help out with the source code!
 
 This Falcon implementation is provided under the MIT license, whose text
 is included at the start of every source file.
+Random bytes and Hybrid also have their own license files (MIT License).
