@@ -40,6 +40,14 @@ The random implementation is based on (https://github.com/dsprenkels/randombytes
 ### Layout
 ![Layout](hybrid-pqc-dsa-layout.png)
 
+### Performance
+These numbers were evaluated on an [AWS t2.medium instance](https://aws.amazon.com/ec2/instance-types/t2/) over 10000 iterations (single threaded), running Ubuntu. Note that this instance type has burstable CPU performance, hence the following numbers are approximate. The reference implementation of Falcon512 from NIST Round 3 and ed25519 implementation from (https://tweetnacl.cr.yp.to/) was used.
+
+1. Generate Key Pair : 25 ms (40 per second)
+2. Sign: 8.5 ms (115 per second)
+3. Sign Open: 3.6 ms (280 per second)
+4. Verify: 3.6 ms  (280 per second)
+
 ## Building
 
 ### Linux/macOS
