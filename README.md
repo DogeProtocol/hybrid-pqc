@@ -38,7 +38,7 @@ The random implementation is based on (https://github.com/dsprenkels/randombytes
 ```SHA256: fd58f0454f6bfb4713734e60b2d2d75d96fbae62d5180fceeef1039df5362f44```
 
 ### Layout
-![Layout](hybrid-pqc-dsa.png)
+![Layout](hybrid-pqc-dsa-layout.png)
 
 ## Building
 
