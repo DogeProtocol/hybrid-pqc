@@ -8,6 +8,7 @@
 
 #include "api.h"
 #include "inner.h"
+#include "../random/randombytes.h"
 
 #define NONCELEN   40
 
@@ -20,13 +21,8 @@
  */
 #define TEMPALLOC
 
-void randombytes_init(unsigned char *entropy_input,
-	unsigned char *personalization_string,
-	int security_strength);
-int randombytes(unsigned char *x, unsigned long long xlen);
-
 int
-crypto_sign_keypair(unsigned char *pk, unsigned char *sk)
+crypto_sign_falcon_keypair(unsigned char *pk, unsigned char *sk)
 {
 	TEMPALLOC union {
 		uint8_t b[FALCON_KEYGEN_TEMP_9];
@@ -90,7 +86,7 @@ crypto_sign_keypair(unsigned char *pk, unsigned char *sk)
 }
 
 int
-crypto_sign(unsigned char *sm, unsigned long long *smlen,
+crypto_sign_falcon(unsigned char *sm, unsigned long long *smlen,
 	const unsigned char *m, unsigned long long mlen,
 	const unsigned char *sk)
 {
@@ -193,7 +189,7 @@ crypto_sign(unsigned char *sm, unsigned long long *smlen,
 }
 
 int
-crypto_sign_open(unsigned char *m, unsigned long long *mlen,
+crypto_sign_falcon_open(unsigned char *m, unsigned long long *mlen,
 	const unsigned char *sm, unsigned long long smlen,
 	const unsigned char *pk)
 {
