@@ -63,8 +63,6 @@ int test_falcon() {
 		return r3;
 	}
 
-	printf("\n falcon sigLen = %d", (int) sigLen);
-
 	unsigned long long msgLen = 0;
 	int r4 = crypto_sign_falcon_open(msg2, &msgLen, sig, sigLen, pk);
 	if (r4 != 0) {
@@ -168,6 +166,7 @@ int test_hybrid() {
 	printf("\n test_hybrid() start");
 
 	unsigned char pk[32 + 897];
+	unsigned char pk2[32 + 897];
 	unsigned char sk[64 + 1281 + 897];
 	unsigned char sig1[2 + 2 + 64 + 690 + 40 + 32];
 	unsigned char sig2[2 + 2 + 64 + 690 + 40 + 32];
@@ -323,6 +322,37 @@ int test_hybrid() {
 	if (r == 0) {
 		printf("\n crypto_sign_falcon_ed25519_open was ok when it should have failed %d", (int)r);
 		return -22;
+	}
+
+	r = crypto_public_key_from_private_key_falcon_ed25519(pk2, sk);
+	if (r != 0) {
+		printf("\n crypto_public_key_from_private_key_falcon_ed25519 A failed %d", (int)r);
+		return -23;
+	}
+
+	const int ed25519PublicKeyLastByteIndex = 64 - 1;
+	unsigned char temp = sk[ed25519PublicKeyLastByteIndex]; //Last byte of ed25519 public key
+	sk[ed25519PublicKeyLastByteIndex] = sk[ed25519PublicKeyLastByteIndex] + 1; //Flip it
+	r = crypto_public_key_from_private_key_falcon_ed25519(pk2, sk);
+	if (r == 0) {
+		printf("\n crypto_public_key_from_private_key_falcon_ed25519 B was ok whe it should have failed %d", (int)r);
+		return -24;
+	}
+	sk[ed25519PublicKeyLastByteIndex] = temp;
+
+	r = crypto_public_key_from_private_key_falcon_ed25519(pk2, sk);
+	if (r != 0) {
+		printf("\n crypto_public_key_from_private_key_falcon_ed25519 C failed %d", (int)r);
+		return -25;
+	}
+
+	const int falconPublicKeyLastByteIndex = 2242 - 1;
+	temp = sk[falconPublicKeyLastByteIndex]; //Last byte of Falcon public key
+	sk[falconPublicKeyLastByteIndex] = sk[falconPublicKeyLastByteIndex] + 1; //Flip it
+	r = crypto_public_key_from_private_key_falcon_ed25519(pk2, sk);
+	if (r == 0) {
+		printf("\n crypto_public_key_from_private_key_falcon_ed25519 D was ok whe it should have failed %d", (int)r);
+		return -26;
 	}
 
 

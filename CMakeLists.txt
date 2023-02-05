@@ -27,7 +27,7 @@ project(hybridpqc C ASM)
 
 
 option(OQS_DIST_BUILD "Build distributable library with optimized code for several CPU microarchitectures. Enables run-time CPU feature detection." ON)
-option(OQS_BUILD_ONLY_LIB "Build only liboqs and do not expose build targets for tests, documentation, and pretty-printing available." OFF)
+option(OQS_BUILD_ONLY_LIB "Build only hybridpqc and do not expose build targets for tests, documentation, and pretty-printing available." OFF)
 set(OQS_MINIMAL_BUILD "" CACHE STRING "Only build specifically listed algorithms.")
 option(OQS_PERMIT_UNSUPPORTED_ARCHITECTURE "Permit compilation on an an unsupported architecture." OFF)
 

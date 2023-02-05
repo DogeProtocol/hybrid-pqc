@@ -32,13 +32,14 @@ THE SOFTWARE.
  * 
  */
 
-#include<stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
 #include "hybrid.h"
 #include "../falcon512/api.h"
 #include "../tweetnacl/tweetnacl.h"
+#include "../random/randombytes.h"
 
 const int MIN_MSG_LEN = 1;
 const int MAX_MSG_LEN = 64;
@@ -46,6 +47,7 @@ const int SIZE_LEN = 2; //2 for size
 
 const int CRYPTO_ED25519_PUBLICKEY_BYTES = 32;
 const int CRYPTO_ED25519_SECRETKEY_BYTES = 64;
+const int CRYPTO_ED25519_SECRETKEY_WITHOUT_PUBLIC_KEY_BYTES = 32;
 const int CRYPTO_ED25519_SIGNATURE_BYTES = 64;
 
 const int LEN_BYTES = 2;
@@ -108,7 +110,6 @@ int crypto_sign_falcon_ed25519_keypair(unsigned char* pk, unsigned char* sk) {
 	if (pk == NULL || sk == NULL) {
 		return -1;
 	}
-
 	
 	unsigned char pk1[32]; //CRYPTO_ED25519_PUBLICKEY_BYTES
 	unsigned char sk1[64]; //CRYPTO_ED25519_SECRETKEY_BYTES
@@ -242,7 +243,7 @@ int crypto_sign_falcon_ed25519_open(unsigned char* m, unsigned long long* mlen,
 		return -2;
 	}
 	int msgLen = ((size_t)sm[2] << 8) | (size_t)sm[3];
-	if (msgLen <= 0 || msgLen >= MAX_MSG_LEN) {
+	if (msgLen <= 0 || msgLen > MAX_MSG_LEN) {
 		return -3;
 	}
 
@@ -359,6 +360,38 @@ int crypto_verify_falcon_ed25519(unsigned char* m, unsigned long long mlen,
 		if (msgFromSignature1[i] != m[i]) {
 			return -4;
 		}
+	}
+
+	return 0;
+}
+
+int crypto_public_key_from_private_key_falcon_ed25519(unsigned char* pk, const unsigned char* sk) {
+	for (int i = 0;i < CRYPTO_ED25519_PUBLICKEY_BYTES;i++) {
+		pk[i] = sk[CRYPTO_ED25519_SECRETKEY_WITHOUT_PUBLIC_KEY_BYTES + i];
+	}
+	for (int i = 0;i < CRYPTO_FALCON_PUBLICKEY_BYTES;i++) {
+		pk[CRYPTO_ED25519_PUBLICKEY_BYTES + i] = sk[CRYPTO_ED25519_SECRETKEY_BYTES + CRYPTO_FALCON_SECRETKEY_BYTES + i];
+	}
+
+	//Verify that public-key matches private-key
+	unsigned char msg[64];
+	unsigned char sig2[798 + 64];
+	unsigned long long sigLen;
+	unsigned long long msgLen;
+
+	int r = randombytes(msg, 64);
+	if (r != 0) {
+		return -1;
+	}
+
+	r = crypto_sign_falcon_ed25519(sig2, &sigLen, msg, 64, sk);
+	if (r != 0) {
+		return r;
+	}
+
+	r = crypto_sign_falcon_ed25519_open(msg, &msgLen, sig2, sigLen, pk);
+	if (r != 0) {
+		return r;
 	}
 
 	return 0;
