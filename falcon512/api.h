@@ -19,13 +19,13 @@
 extern "C" {
 #endif
 
-int crypto_sign_falcon_keypair(unsigned char* pk, unsigned char* sk);
+HYBRIDPQC_API int crypto_sign_falcon_keypair(unsigned char* pk, unsigned char* sk);
 
-int crypto_sign_falcon(unsigned char* sm, unsigned long long* smlen,
+HYBRIDPQC_API int crypto_sign_falcon(unsigned char* sm, unsigned long long* smlen,
 	const unsigned char* m, unsigned long long mlen,
 	const unsigned char* sk);
 
-int crypto_sign_falcon_open(unsigned char* m, unsigned long long* mlen,
+HYBRIDPQC_API int crypto_sign_falcon_open(unsigned char* m, unsigned long long* mlen,
 	const unsigned char* sm, unsigned long long smlen,
 	const unsigned char* pk);
 
