@@ -103,6 +103,16 @@ If any of the below files are not available for download, you may have to downlo
 		cmake -G Ninja -DBUILD_SHARED_LIBS=ON ..
 		ninja    
 
+
+### Web Assembly WASM
+
+1. Install emsdk https://www.tutorialspoint.com/webassembly/webassembly_installation.htm
+2. Goto directory of emsdk and run: emsdk_env.bat
+3. Create build folder. For example: c:\github\hybrid-pqc\wasm\build
+4. Run the following command, replacing appropriate paths:
+
+emcc -s WASM=1 -s EXPORTED_FUNCTIONS="['_free', '_malloc']"  -s "EXPORTED_RUNTIME_METHODS=['getValue']" C:/github/hybrid-pqc/wasm/hybrid-pqc.c C:/github/hybrid-pqc/random/randombytes.c C:/github/hybrid-pqc/falcon512/codec.c C:/github/hybrid-pqc/falcon512/common.c C:/github/hybrid-pqc/falcon512/fft.c C:/github/hybrid-pqc/falcon512/fpr.c C:/github/hybrid-pqc/falcon512/keygen.c C:/github/hybrid-pqc/falcon512/nist.c C:/github/hybrid-pqc/falcon512/rng.c C:/github/hybrid-pqc/falcon512/shake.c C:/github/hybrid-pqc/falcon512/sign.c C:/github/hybrid-pqc/falcon512/vrfy.c C:/github/hybrid-pqc/tweetnacl/tweetnacl.c C:/github/hybrid-pqc/hybrid/hybrid.c -o C:/github/hybrid-pqc/wasm/build/hybrid-pqc.html
+
 ## Contributing
 
 Thank you for considering to help out with the source code! 
