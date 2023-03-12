@@ -39,7 +39,9 @@ crypto_sign_falcon_keypair(unsigned char *pk, unsigned char *sk)
 	/*
 	 * Generate key pair.
 	 */
-	randombytes(seed, sizeof seed);
+	if (randombytes(seed, sizeof seed) != 0) {
+		return -1;
+	}
 	inner_shake256_init(&rng);
 	inner_shake256_inject(&rng, seed, sizeof seed);
 	inner_shake256_flip(&rng);
@@ -140,7 +142,9 @@ crypto_sign_falcon(unsigned char *sm, unsigned long long *smlen,
 	/*
 	 * Create a random nonce (40 bytes).
 	 */
-	randombytes(nonce, sizeof nonce);
+	if (randombytes(nonce, sizeof nonce) != 0) {
+		return -1;
+	}
 
 	/*
 	 * Hash message nonce + message into a vector.
@@ -154,7 +158,9 @@ crypto_sign_falcon(unsigned char *sm, unsigned long long *smlen,
 	/*
 	 * Initialize a RNG.
 	 */
-	randombytes(seed, sizeof seed);
+	if (randombytes(seed, sizeof seed) != 0) {
+		return -1;
+	}
 	inner_shake256_init(&sc);
 	inner_shake256_inject(&sc, seed, sizeof seed);
 	inner_shake256_flip(&sc);
