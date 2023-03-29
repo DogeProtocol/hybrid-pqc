@@ -661,9 +661,12 @@ int crypto_sign_keypair(u8 *pk, u8 *sk)
   gf p[4];
   int i;
 
-  if (randombytes(sk, 32) != 0) {
-   return -1;
+  int r1 = randombytes(sk, 32);
+  
+  if (r1 != 0){
+   return r1;
   }
+
   crypto_hash(d, sk, 32);
   d[0] &= 248;
   d[31] &= 127;
