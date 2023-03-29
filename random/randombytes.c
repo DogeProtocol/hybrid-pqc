@@ -296,15 +296,24 @@ static int randombytes_bsd_randombytes(void *buf, size_t n)
 
 #if defined(__EMSCRIPTEN__)
 static int randombytes_js_randombytes_nodejs(void *buf, size_t n) {
+
 	const int ret = EM_ASM_INT({
-		var crypto;
+
+		if (window.crypto && window.crypto.getRandomValues) {
+			var randBuffer = new Uint8Array($1);
+			window.crypto.getRandomValues(randBuffer);
+			writeArrayToMemory(randBuffer, $0);
+			return 0;
+		}
+
+		var cryptoMod;
 		try {
-			crypto = require('crypto');
+			cryptoMod = require('crypto');
 		} catch (error) {
 			return -2;
 		}
 		try {
-			writeArrayToMemory(crypto.randomBytes($1), $0);
+			writeArrayToMemory(cryptoMod.randomBytes($1), $0);
 			return 0;
 		} catch (error) {
 			return -1;
@@ -320,6 +329,7 @@ static int randombytes_js_randombytes_nodejs(void *buf, size_t n) {
 		errno = ENOSYS;
 		return -1;
 	}
+	return ret;
 	assert(false); // Unreachable
 }
 #endif /* defined(__EMSCRIPTEN__) */
