@@ -22,7 +22,22 @@
 #define TEMPALLOC
 
 int
-crypto_sign_falcon_keypair(unsigned char *pk, unsigned char *sk)
+crypto_sign_falcon_keypair(unsigned char* pk, unsigned char* sk)
+{
+	TEMPALLOC unsigned char seed[48];
+
+	/*
+	 * Generate Seed
+	 */
+	if (randombytes(seed, sizeof seed) != 0) {
+		return -1;
+	}
+
+	return crypto_sign_falcon_keypair_seed(pk, sk, seed, sizeof seed);
+}
+
+int
+crypto_sign_falcon_keypair_seed(unsigned char *pk, unsigned char *sk, unsigned char* seed,size_t seedLen)
 {
 	TEMPALLOC union {
 		uint8_t b[FALCON_KEYGEN_TEMP_9];
@@ -31,22 +46,18 @@ crypto_sign_falcon_keypair(unsigned char *pk, unsigned char *sk)
 	} tmp;
 	TEMPALLOC int8_t f[512], g[512], F[512];
 	TEMPALLOC uint16_t h[512];
-	TEMPALLOC unsigned char seed[48];
 	TEMPALLOC inner_shake256_context rng;
 	size_t u, v;
 
-
-	/*
-	 * Generate key pair.
-	 */
-	if (randombytes(seed, sizeof seed) != 0) {
-		return -1;
+	TEMPALLOC unsigned char seedTemp[48];
+	if (seedLen != sizeof seedTemp) {
+		return -12;
 	}
+
 	inner_shake256_init(&rng);
-	inner_shake256_inject(&rng, seed, sizeof seed);
+	inner_shake256_inject(&rng, seed, seedLen);
 	inner_shake256_flip(&rng);
 	Zf(keygen)(&rng, f, g, F, NULL, h, 9, tmp.b);
-
 
 	/*
 	 * Encode private key.

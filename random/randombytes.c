@@ -337,6 +337,7 @@ static int randombytes_js_randombytes_nodejs(void *buf, size_t n) {
 
 int randombytes(void *buf, size_t n)
 {
+	//printf("\n random %d", n);
 #if defined(__EMSCRIPTEN__)
 # pragma message("Using crypto api from NodeJS")
 	return randombytes_js_randombytes_nodejs(buf, n);

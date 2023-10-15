@@ -81,6 +81,66 @@ int test_falcon() {
 		}
 	}
 
+	printf("\n deterministic key generation test");
+	unsigned char seed1[48];
+	if (randombytes(seed1, sizeof seed1) != 0) {
+		return -7;
+	}
+
+	unsigned char pk2[897];
+	unsigned char sk2[1281 + 897];
+	int r5 = crypto_sign_falcon_keypair_seed(pk2, sk2, seed1, sizeof seed1);
+	if (r5 != 0) {
+		printf("\n crypto_sign_falcon_keypair_seed failed %d", (int)r5);
+		return r5;
+	}
+
+	for (int j = 0; j < 32; j++) {
+		unsigned char pk3[897];
+		unsigned char sk3[1281 + 897];
+		int r6 = crypto_sign_falcon_keypair_seed(pk3, sk3, seed1, sizeof seed1);
+		if (r6 != 0) {
+			printf("\n crypto_sign_falcon_keypair_seed failed %d", (int)r6);
+			return r6;
+		}
+		for (int i = 0; i < 897; i++) {
+			if (pk2[i] != pk3[i]) {
+				printf("\n determienistic key generation failed: pk");
+				return -8;
+			}
+		}
+		for (int i = 0; i < 1281 + 897; i++) {
+			if (sk2[i] != sk3[i]) {
+				printf("\n determienistic key generation failed: sk");
+				return -9;
+			}
+		}
+
+		int r = crypto_sign_falcon(sig, &sigLen, msg1, 32, sk3);
+		if (r != 0) {
+			printf("\n crypto_sign_falcon failed %d", (int)r);
+			return r;
+		}
+
+		unsigned long long msgLen = 0;
+		r = crypto_sign_falcon_open(msg2, &msgLen, sig, sigLen, pk3);
+		if (r != 0) {
+			printf("\n crypto_sign_falcon_open failed %d", (int)r);
+			return r;
+		}
+		if (msgLen != 32) {
+			printf("\n crypto_sign_falcon_open msg check failed %d", (int)msgLen);
+			return -5;
+		}
+
+		for (int i = 0; i < 32; i++) {
+			if (msg1[i] != msg2[i]) {
+				printf("\n verify msg content failed %d", i);
+				return -6;
+			}
+		}
+	}
+
 	printf("\n test_falcon() ok");
 
 	return 0;
@@ -363,6 +423,131 @@ int test_hybrid() {
 	return 0;
 }
 
+int test_hybrid_deterministic() {
+	printf("\n test_hybrid_deterministic() start");
+
+	unsigned char pk[32 + 897];
+	unsigned char pk2[32 + 897];
+	unsigned char pk3[32 + 897];
+	unsigned char sk[64 + 1281 + 897];
+	unsigned char sk2[64 + 1281 + 897];
+	unsigned char sk3[64 + 1281 + 897];
+	unsigned char sig1[2 + 2 + 64 + 690 + 40 + 32];
+	unsigned char sig2[2 + 2 + 64 + 690 + 40 + 32];
+	unsigned char msg1[32];
+	unsigned char msg2[32];
+	unsigned char msg1output[32];
+	unsigned char msg2output[32];
+	unsigned long long sigLen1 = 0;
+	unsigned long long sigLen2 = 0;
+	unsigned long long msgLen1 = 0;
+	unsigned long long msgLen2 = 0;
+	const int MSG_LEN = 32;
+
+	unsigned char seed1[80];
+	if (randombytes(seed1, sizeof seed1) != 0) {
+		return -7;
+	}
+
+	unsigned char seed3[80];
+	if (randombytes(seed3, sizeof seed3) != 0) {
+		return -7;
+	}
+
+	int r = crypto_sign_falcon_ed25519_keypair_seed(pk, sk, seed1);
+	if (r != 0) {
+		printf("\n crypto_sign_falcon_ed25519_keypair_seed failed %d", (int)r);
+		return -1;
+	}
+
+	for (int j = 0; j < 32; j++) {
+		r = crypto_sign_falcon_ed25519_keypair_seed(pk2, sk2, seed1);
+		if (r != 0) {
+			printf("\n crypto_sign_falcon_ed25519_keypair_seed failed %d", (int)r);
+			return -1;
+		}
+
+		for (int k = 0; k < 32 + 897; k++) {
+			if (pk[k] != pk2[k]) {
+				printf("\n deterministic generation failed: pk");
+				return -10;
+			}
+		}
+
+		for (int k = 0; k < 64 + 1281 + 897; k++) {
+			if (sk[k] != sk2[k]) {
+				printf("\n deterministic generation failed: sk");
+				return -11;
+			}
+		}
+
+		r = crypto_sign_falcon_ed25519_keypair_seed(pk3, sk3, seed3);
+		if (r != 0) {
+			printf("\n crypto_sign_falcon_ed25519_keypair_seed failed %d", (int)r);
+			return -1;
+		}
+
+		int matchCount = 0;
+		for (int k = 0; k < 32 + 897; k++) {
+			if (pk2[k] == pk3[k]) {
+				matchCount++;
+			}
+		}
+		if (matchCount == 32 + 897) {
+			printf("\n deterministic generation failed repeat: pk");
+			return -10;
+		}
+
+		matchCount = 0;
+		for (int k = 0; k < 64 + 1281 + 897; k++) {
+			if (sk2[k] == sk3[k]) {
+				matchCount++;
+			}
+		}
+		if (matchCount == 64 + 1281 + 897) {
+			printf("\n deterministic generation failed repeat: pk");
+			return -10;
+		}
+
+		r = randombytes(msg1, MSG_LEN * sizeof(unsigned char));
+		if (r != 0) {
+			printf("\n randombytes failed %d", (int)r);
+			return -2;
+		}
+
+		r = crypto_sign_falcon_ed25519(sig1, &sigLen1, msg1, MSG_LEN, sk);
+		if (r != 0) {
+			printf("\n crypto_sign_falcon_ed25519 failed %d", (int)r);
+			return -3;
+		}
+
+		if (sigLen1 != 830) {
+			printf("\n crypto_sign_falcon_ed25519 sigLen error %d", (int)sigLen1);
+			return -4;
+		}
+
+		r = crypto_sign_falcon_ed25519_open(msg1output, &msgLen1, sig1, sigLen1, pk);
+		if (r != 0) {
+			printf("\n crypto_sign_falcon_ed25519_open failed %d", (int)r);
+			return -5;
+		}
+
+		if (msgLen1 != MSG_LEN) {
+			printf("\n verify msglen failed expected %d got %d", MSG_LEN, (int)msgLen1);
+			return -6;
+		}
+
+		for (int i = 0; i < MSG_LEN; i++) {
+			if (msg1[i] != msg1output[i]) {
+				printf("\n verify msg content failed %d", i);
+				return -7;
+			}
+		}
+	}
+
+	printf("\n test_hybrid_deterministic() ok");
+}
+
 int test_multiple(int count) {
 	printf("\n test_multiple hybrid %d", count);
 	for (int i = 0;i < count;i++) {
@@ -387,6 +572,11 @@ int main(int argc, char* argv[]) {
 
 	int count = 10;
 	int r3 = test_multiple(count);
+	if (r3 != 0) {
+		return r3;
+	}
+
+	r3 = test_hybrid_deterministic();
 	if (r3 != 0) {
 		return r3;
 	}

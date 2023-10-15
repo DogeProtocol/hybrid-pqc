@@ -16,6 +16,8 @@ extern "C" {
 
 #define CRYPTO_HYBRID_ALGNAME          "Falcon-512-ed25519"
 
+HYBRID_API int crypto_sign_falcon_ed25519_keypair_seed(unsigned char* pk, unsigned char* sk, unsigned char* seed); //seed needs to be 80 chars in length (48 + 32)
+
 HYBRID_API int crypto_sign_falcon_ed25519_keypair(unsigned char* pk, unsigned char* sk);
 
 HYBRID_API int crypto_sign_falcon_ed25519(unsigned char* sm, unsigned long long* smlen,

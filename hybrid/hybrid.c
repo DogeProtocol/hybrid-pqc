@@ -41,6 +41,9 @@ THE SOFTWARE.
 #include "../tweetnacl/tweetnacl.h"
 #include "../random/randombytes.h"
 
+const int SEED_LENGTH_ED25519 = 32;
+const int SEED_LENGTH_FALCON = 48;
+
 const int MIN_MSG_LEN = 1;
 const int MAX_MSG_LEN = 64;
 const int SIZE_LEN = 2; //2 for size
@@ -105,6 +108,59 @@ Message is variable length, between 1 to 64 bytes
 Falcon Signature is variable length, between 600 to 690. To give predicatable length, rest of bytes are padded with zero (690 - falcon signature).
 
 */
+
+int crypto_sign_falcon_ed25519_keypair_seed(unsigned char* pk, unsigned char* sk, unsigned char* seed) {
+	if (pk == NULL || sk == NULL) {
+		return -1;
+	}
+
+	unsigned char pk1[32]; //CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned char sk1[64]; //CRYPTO_ED25519_SECRETKEY_BYTES
+	unsigned char pk2[897]; //CRYPTO_FALCON_PUBLICKEY_BYTES
+	unsigned char sk2[1281 + 897]; //CRYPTO_FALCON_SECRETKEY_BYTES
+
+	unsigned char seed1[32]; //SEED_LENGTH_ED25519
+	unsigned char seed2[48]; //SEED_LENGTH_FALCON
+
+	for (int i = 0; i < SEED_LENGTH_ED25519; i++) {
+		seed1[i] = seed[i];
+	}
+
+	for (int i = 0; i < SEED_LENGTH_FALCON; i++) {
+		seed2[i] = seed[i + SEED_LENGTH_ED25519];
+	}
+
+	int r1 = crypto_sign_ed25519_keypair_seed(pk1, sk1, seed1);
+	if (r1 != 0) {
+		return -2;
+	}
+
+	for (int i = 0; i < CRYPTO_ED25519_PUBLICKEY_BYTES; i++) {
+		pk[i] = pk1[i];
+	}
+
+	for (int i = 0; i < CRYPTO_ED25519_SECRETKEY_BYTES; i++) {
+		sk[i] = sk1[i];
+	}
+
+	int r2 = crypto_sign_falcon_keypair_seed(pk2, sk2, seed2, sizeof seed2);
+
+	if (r2 != 0) {
+		return -3;
+	}
+
+	for (int i = 0; i < CRYPTO_FALCON_SECRETKEY_BYTES; i++) {
+		sk[CRYPTO_ED25519_SECRETKEY_BYTES + i] = sk2[i];
+	}
+
+	for (int i = 0; i < CRYPTO_FALCON_PUBLICKEY_BYTES; i++) {
+		pk[CRYPTO_ED25519_PUBLICKEY_BYTES + i] = pk2[i];
+		sk[CRYPTO_ED25519_SECRETKEY_BYTES + CRYPTO_FALCON_SECRETKEY_BYTES + i] = pk2[i]; //copy public key
+	}
+
+
+	return 0;
+}
 
 int crypto_sign_falcon_ed25519_keypair(unsigned char* pk, unsigned char* sk) {
 	if (pk == NULL || sk == NULL) {
