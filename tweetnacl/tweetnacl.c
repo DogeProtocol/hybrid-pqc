@@ -655,18 +655,28 @@ sv scalarbase(gf p[4],const u8 *s)
   scalarmult(p,q,s);
 }
 
-int crypto_sign_keypair(u8 *pk, u8 *sk)
+int crypto_sign_keypair(u8* pk, u8* sk)
+{
+    u8 seed[32];
+    int r1 = randombytes(seed, 32);
+
+    if (r1 != 0) {
+        return r1;
+    }
+
+    return crypto_sign_keypair_seed(pk, sk, seed);
+}
+
+int crypto_sign_keypair_seed(u8 *pk, u8 *sk, u8* seed)
 {
   u8 d[64];
   gf p[4];
   int i;
 
-  int r1 = randombytes(sk, 32);
-  
-  if (r1 != 0){
-   return r1;
+  for (int j = 0; j < 32; j++) {
+      sk[j] = seed[j];
   }
-
+  
   crypto_hash(d, sk, 32);
   d[0] &= 248;
   d[31] &= 127;
