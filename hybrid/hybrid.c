@@ -114,13 +114,13 @@ int crypto_sign_falcon_ed25519_keypair_seed(unsigned char* pk, unsigned char* sk
 		return -1;
 	}
 
-	unsigned char pk1[32]; //CRYPTO_ED25519_PUBLICKEY_BYTES
-	unsigned char sk1[64]; //CRYPTO_ED25519_SECRETKEY_BYTES
-	unsigned char pk2[897]; //CRYPTO_FALCON_PUBLICKEY_BYTES
-	unsigned char sk2[1281 + 897]; //CRYPTO_FALCON_SECRETKEY_BYTES
+	unsigned char pk1[32] = { 0 }; //CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned char sk1[64] = { 0 }; //CRYPTO_ED25519_SECRETKEY_BYTES
+	unsigned char pk2[897] = { 0 }; //CRYPTO_FALCON_PUBLICKEY_BYTES
+	unsigned char sk2[1281 + 897] = { 0 }; //CRYPTO_FALCON_SECRETKEY_BYTES
 
-	unsigned char seed1[32]; //SEED_LENGTH_ED25519
-	unsigned char seed2[48]; //SEED_LENGTH_FALCON
+	unsigned char seed1[32] = { 0 }; //SEED_LENGTH_ED25519
+	unsigned char seed2[48] = { 0 }; //SEED_LENGTH_FALCON
 
 	for (int i = 0; i < SEED_LENGTH_ED25519; i++) {
 		seed1[i] = seed[i];
@@ -167,10 +167,10 @@ int crypto_sign_falcon_ed25519_keypair(unsigned char* pk, unsigned char* sk) {
 		return -1;
 	}
 	
-	unsigned char pk1[32]; //CRYPTO_ED25519_PUBLICKEY_BYTES
-	unsigned char sk1[64]; //CRYPTO_ED25519_SECRETKEY_BYTES
-	unsigned char pk2[897]; //CRYPTO_FALCON_PUBLICKEY_BYTES
-	unsigned char sk2[1281 + 897]; //CRYPTO_FALCON_SECRETKEY_BYTES
+	unsigned char pk1[32] = { 0 }; //CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned char sk1[64] = { 0 }; //CRYPTO_ED25519_SECRETKEY_BYTES
+	unsigned char pk2[897] = { 0 }; //CRYPTO_FALCON_PUBLICKEY_BYTES
+	unsigned char sk2[1281] = { 0 }; //CRYPTO_FALCON_SECRETKEY_BYTES
 
 	int r1 = crypto_sign_ed25519_keypair(pk1, sk1);
 	if (r1 != 0) {
@@ -215,10 +215,11 @@ int crypto_sign_falcon_ed25519(unsigned char* sm, unsigned long long* smlen,
 	unsigned long long sigLen1 = 0;
 	unsigned long long sigLen2 = 0;
 
-	unsigned char sig1[64 + 64]; //CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN
-	unsigned char sig2[690 + 40 + 2 + 64]; //CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN
-	unsigned char sk1[64]; //CRYPTO_ED25519_SECRETKEY_BYTES
-	unsigned char sk2[1281]; //CRYPTO_FALCON_SECRETKEY_BYTES
+	unsigned char sig1[64 + 64] = { 0 }; //CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN
+	unsigned char sig2[690 + 40 + 2 + 64] = { 0 }; //CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN
+	unsigned char sk1[64] = { 0 }; //CRYPTO_ED25519_SECRETKEY_BYTES
+	unsigned char sk2[1281] = { 0 }; //CRYPTO_FALCON_SECRETKEY_BYTES
+
 
 	//Copy sk1 from input
 	for (int i = 0;i < CRYPTO_ED25519_SECRETKEY_BYTES;i++) {
@@ -309,14 +310,14 @@ int crypto_sign_falcon_ed25519_open(unsigned char* m, unsigned long long* mlen,
 		return sig2Len;
 	}
 
-	unsigned char msgFromSignature1[64 + 64 + 32]; //MAX_MSG_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned char msgFromSignature1[64 + 64 + 32] = { 0 }; //MAX_MSG_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_ED25519_PUBLICKEY_BYTES
 	unsigned long long msgFromSignatureLen1 = 0;
-	unsigned char msgFromSignature2[64]; //MAX_MSG_LEN
+	unsigned char msgFromSignature2[64] = { 0 }; //MAX_MSG_LEN
 	unsigned long long msgFromSignatureLen2 = 0;
-	unsigned char sig1[64 + 64]; //CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN
-	unsigned char sig2[2 + 40 + 64 + 690]; //SIZE_LEN + CRYPTO_FALCON_NONCE_LENGTH + CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN
-	unsigned char pk1[32]; //CRYPTO_ED25519_PUBLICKEY_BYTES
-	unsigned char pk2[897]; //CRYPTO_FALCON_PUBLICKEY_BYTES
+	unsigned char sig1[64 + 64] = { 0 }; //CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN
+	unsigned char sig2[2 + 40 + 64 + 690] = { 0 }; //SIZE_LEN + CRYPTO_FALCON_NONCE_LENGTH + CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN
+	unsigned char pk1[32] = { 0 }; //CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned char pk2[897] = { 0 }; //CRYPTO_FALCON_PUBLICKEY_BYTES
 
 	//Copy Sig1 from source, including message
 	for (int i = 0;i < (int)sig1Len;i++) {
@@ -362,7 +363,6 @@ int crypto_sign_falcon_ed25519_open(unsigned char* m, unsigned long long* mlen,
 		pk2[i] = pk[i + CRYPTO_ED25519_PUBLICKEY_BYTES];
 	}
 
-
 	int r2 = crypto_sign_falcon_open(msgFromSignature2, &msgFromSignatureLen2, sig2, sig2Len, pk2);
 	if (r2 != 0) {
 		return -6;
@@ -400,7 +400,7 @@ int crypto_verify_falcon_ed25519(unsigned char* m, unsigned long long mlen,
 		return -1;
 	}
 	
-	unsigned char msgFromSignature1[64 + 64 + 32]; //MAX_MSG_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned char msgFromSignature1[64 + 64 + 32] = { 0 }; //MAX_MSG_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_ED25519_PUBLICKEY_BYTES
 	unsigned long long msgFromSignatureLen1 = 0;
 
 	int r = crypto_sign_falcon_ed25519_open(msgFromSignature1, &msgFromSignatureLen1, sm, smlen, pk);
@@ -430,8 +430,8 @@ int crypto_public_key_from_private_key_falcon_ed25519(unsigned char* pk, const u
 	}
 
 	//Verify that public-key matches private-key
-	unsigned char msg[64];
-	unsigned char sig2[798 + 64];
+	unsigned char msg[64] = { 0 };
+	unsigned char sig2[798 + 64] = { 0 };
 	unsigned long long sigLen;
 	unsigned long long msgLen;
 

@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-HYBRIDPQC_API int crypto_sign_falcon_keypair_with_seed(unsigned char* pk, unsigned char* sk, unsigned char* seed, size_t seedLen); //seed needs to be 48 chars long
+HYBRIDPQC_API int crypto_sign_falcon_keypair_seed(unsigned char* pk, unsigned char* sk, unsigned char* seed, size_t seedLen); //seed needs to be 48 chars long
 
 HYBRIDPQC_API int crypto_sign_falcon_keypair(unsigned char* pk, unsigned char* sk);
 
