@@ -22,21 +22,6 @@
 #define TEMPALLOC
 
 int
-crypto_sign_falcon_keypair(unsigned char* pk, unsigned char* sk)
-{
-	TEMPALLOC unsigned char seed[48];
-
-	/*
-	 * Generate Seed
-	 */
-	if (randombytes(seed, sizeof seed) != 0) {
-		return -1;
-	}
-
-	return crypto_sign_falcon_keypair_seed(pk, sk, seed, sizeof seed);
-}
-
-int
 crypto_sign_falcon_keypair_seed(unsigned char *pk, unsigned char *sk, unsigned char* seed,size_t seedLen)
 {
 	TEMPALLOC union {
@@ -96,6 +81,21 @@ crypto_sign_falcon_keypair_seed(unsigned char *pk, unsigned char *sk, unsigned c
 	}
 
 	return 0;
+}
+
+int
+crypto_sign_falcon_keypair(unsigned char* pk, unsigned char* sk)
+{
+	TEMPALLOC unsigned char seed[48] = { 0 };
+
+	/*
+	 * Generate Seed
+	 */
+	if (randombytes(seed, sizeof seed) != 0) {
+		return -1;
+	}
+
+	return crypto_sign_falcon_keypair_seed(pk, sk, seed, sizeof seed);
 }
 
 int
