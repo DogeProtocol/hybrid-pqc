@@ -85,9 +85,6 @@ jobs:
               ${{ github.workspace }}/build/bin/Release/hybridpqc.dll
 
     - name: 'Create Release'
-    - uses: actions/checkout@v3
-    - uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@v1.13.0
       with:
-        artifacts: |
-                   ${{ github.workspace }}/build/lib/libhybridpqc.so
-                   ${{ github.workspace }}/build/bin/Release/hybridpqc.dll                   
+        artifacts: "${{ github.workspace }}/build/lib/libhybridpqc.so,${{ github.workspace }}/build/bin/Release/hybridpqc.dll"
