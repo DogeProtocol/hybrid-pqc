@@ -82,11 +82,6 @@ jobs:
               ${{ github.workspace }}/build/bin/Release/*.*
 
     - name: release
-      uses: actions/create-release@v1
-      id: create_release
+    - uses: ncipollo/release-action@v1
       with:
-        draft: false
-        prerelease: true
-        release_name: ${{ github.ref }}
-        tag_name: ${{ github.ref }}
-
+        artifacts: "*.so, *.dll"
