@@ -5,6 +5,8 @@ name: CMake on multiple platforms
 on:
   push:
     branches: [ "main" ]
+    tags:
+    - '*'    
   pull_request:
     branches: [ "main" ]
 
@@ -82,3 +84,10 @@ jobs:
               ${{ github.workspace }}/build/lib/libhybridpqc.so
               ${{ github.workspace }}/build/bin/Release/hybridpqc.dll
 
+    - name: 'Create Release'
+    - uses: actions/checkout@v3
+    - uses: ncipollo/release-action@v1
+      with:
+        artifacts: |
+                   ${{ github.workspace }}/build/lib/libhybridpqc.so
+                   ${{ github.workspace }}/build/bin/Release/hybridpqc.dll                   
