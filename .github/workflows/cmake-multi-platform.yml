@@ -79,7 +79,6 @@ jobs:
       with:
         name: hybridpqc
         path: |
-              ./*/*.dll
-              ./*/*.so
-              ./*/*.exe
+              ${{build-output-dir }}/lib/libhybridpqc.so
+              ${{build-output-dir }}/bin/Release/hybridpqc.dll
 
