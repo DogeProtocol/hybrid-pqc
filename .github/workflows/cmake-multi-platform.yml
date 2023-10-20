@@ -4,8 +4,9 @@ name: CMake on multiple platforms
 
 on:
   push:
-    tags:
-    - '*'    
+    branches: [ "main" ]   
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -80,8 +81,3 @@ jobs:
         path: |
               ${{ github.workspace }}/build/lib/*.*
               ${{ github.workspace }}/build/bin/Release/*.*
-
-    - name: 'Create Release'
-      uses: ncipollo/release-action@v1.13.0
-      with:
-        artifacts: "${{ github.workspace }}/build/lib/*.*,${{ github.workspace }}/build/bin/Release/*.*"
