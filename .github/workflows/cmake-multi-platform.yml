@@ -81,8 +81,8 @@ jobs:
       with:
         name: hybridpqc
         path: |
-              ${{ github.workspace }}/build/lib/libhybridpqc.so
-              ${{ github.workspace }}/build/bin/Release/hybridpqc.dll
+              ${{ github.workspace }}/build/lib/*.*
+              ${{ github.workspace }}/build/bin/Release/*.*
 
     - name: 'Create Release'
       uses: ncipollo/release-action@v1.13.0
