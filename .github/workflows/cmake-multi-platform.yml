@@ -78,5 +78,8 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: hybridpqc
-        path: bin/*.*
-        retention-days: 365
+        path: |
+              ./*/*.dll
+              ./*/*.so
+              ./*/*.exe
+
