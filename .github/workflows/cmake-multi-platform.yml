@@ -79,6 +79,6 @@ jobs:
       with:
         name: hybridpqc
         path: |
-              ${{build-output-dir }}/lib/libhybridpqc.so
-              ${{build-output-dir }}/bin/Release/hybridpqc.dll
+              ${{ github.workspace }}/build/lib/libhybridpqc.so
+              ${{ github.workspace }}/build/bin/Release/hybridpqc.dll
 
