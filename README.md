@@ -1,3 +1,5 @@
+[![CMake on multiple platforms](https://github.com/DogeProtocol/hybrid-pqc/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/DogeProtocol/hybrid-pqc/actions/workflows/cmake-multi-platform.yml)
+
 # Hybrid Post Quantum Cryptography
 While lattice based post-quantum cryptography schemes such as Falcon and Dilithium have been standardized, they haven’t 
 been battle-tested widely over the years like RSA and Elliptic Curve vased crypto-schemes. It's possible that newer category of attacks on Lattice based cryptography may come to light.
