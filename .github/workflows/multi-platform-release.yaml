@@ -85,5 +85,5 @@ jobs:
       uses: ncipollo/release-action@v1
       with:
         allowUpdates: true
-        artifacts: "${{ github.workspace }}/build/lib/*.*, ${{ github.workspace }}/build/bin/Release/*.*"
+        artifacts: "${{ github.workspace }}/build/lib/*.*, ${{ github.workspace }}/build/bin/Release/*.*,*.zip"
 
