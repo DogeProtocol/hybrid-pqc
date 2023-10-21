@@ -82,6 +82,6 @@ jobs:
               ${{ github.workspace }}/build/bin/Release/*.*
 
     - name: release
-    - uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@v1
       with:
         artifacts: "*.so, *.dll"
