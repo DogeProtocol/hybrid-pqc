@@ -20,7 +20,8 @@ model, since it will be abstracted away.
 Some disadvantages of the hybrid model are increased complexity, increased risk of implementation bugs, increased compute time, increased 
 storage, and bandwidth requirements. However, the security benefits of the hybrid model outweigh these disadvantages.
 
-A deterministic version of key generation has also been added. For example, this can be used for seed phrase based wallet generation for blockchains.
+## Deterministic Key Generation
+A deterministic version of key generation has also been added. For example, this can be used for seed phrase based wallet generation for blockchains. The size of the seed is 80 bytes; 48 bytes for Falcon and 32 bytes for ed25519. The seed should be generated using a CSPRNG. 
 
 ### Warning
 This is test software, not yet ready for production use. Do not use in production systems!
