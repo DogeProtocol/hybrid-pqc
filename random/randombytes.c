@@ -85,7 +85,7 @@ static int randombytes_win32_randombytes(void* buf, size_t n)
 	DWORD   BufferSize;
 	NTSTATUS    Status;
 
-	BufferSize = sizeof(buf);
+	BufferSize = n;
 	memset(buf, 0, BufferSize);
 
 	Status = BCryptGenRandom(
