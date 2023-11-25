@@ -82,16 +82,14 @@
 #if defined(_WIN32)
 static int randombytes_win32_randombytes(void* buf, size_t n)
 {
-	DWORD   BufferSize;
 	NTSTATUS    Status;
 
-	BufferSize = n;
-	memset(buf, 0, BufferSize);
+	memset(buf, 0, n);
 
 	Status = BCryptGenRandom(
 		NULL,                       // Alg Handle pointer; NUll is passed as BCRYPT_USE_SYSTEM_PREFERRED_RNG flag is used
 		buf,                     // Address of the buffer that recieves the random number(s)
-		BufferSize,                 // Size of the buffer in bytes
+		n,                 // Size of the buffer in bytes
 		BCRYPT_USE_SYSTEM_PREFERRED_RNG); // Flags                  
 
 	if (NT_SUCCESS(Status))
@@ -351,7 +349,7 @@ static int randombytes_js_randombytes_nodejs(void *buf, size_t n) {
 		errno = ENOSYS;
 		return -1;
 	}
-	return ret;
+	return -3;
 	assert(false); // Unreachable
 }
 #endif /* defined(__EMSCRIPTEN__) */

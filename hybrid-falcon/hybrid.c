@@ -37,29 +37,10 @@ THE SOFTWARE.
 #include <stddef.h>
 #include <string.h>
 #include "hybrid.h"
+#include "../common/hybrid-common.h"
 #include "../falcon512/api.h"
 #include "../tweetnacl/tweetnacl.h"
 #include "../random/randombytes.h"
-
-const int SEED_LENGTH_ED25519 = 32;
-const int SEED_LENGTH_FALCON = 48;
-
-const int MIN_MSG_LEN = 1;
-const int MAX_MSG_LEN = 64;
-const int SIZE_LEN = 2; //2 for size
-
-const int CRYPTO_ED25519_PUBLICKEY_BYTES = 32;
-const int CRYPTO_ED25519_SECRETKEY_BYTES = 64;
-const int CRYPTO_ED25519_SECRETKEY_WITHOUT_PUBLIC_KEY_BYTES = 32;
-const int CRYPTO_ED25519_SIGNATURE_BYTES = 64;
-
-const int LEN_BYTES = 2;
-const int CRYPTO_FALCON_PUBLICKEY_BYTES = 897;
-const int CRYPTO_FALCON_SECRETKEY_BYTES = 1281;
-const int CRYPTO_FALCON_SECRETKEY_WITH_PUBLIC_KEY_BYTES = 1281 + 897;
-const int CRYPTO_FALCON_NONCE_LENGTH = 40;
-const int CRYPTO_FALCON_MIN_SIGNATURE_BYTES = 600 + 40 + 2; //Signature + Nonce + 2 for size
-const int CRYPTO_FALCON_MAX_SIGNATURE_BYTES = 690 + 40 + 2; //Signature + Nonce + 2 for size
 
 const int CRYPTO_HYBRID_PUBLICKEY_BYTES = 32 + 897;
 const int CRYPTO_HYBRID_SECRETKEY_BYTES = 64 + 1281;
@@ -290,8 +271,8 @@ int crypto_sign_falcon_ed25519_open(unsigned char* m, unsigned long long* mlen,
 	const unsigned char* sm, unsigned long long smlen,
 	const unsigned char* pk) {
 
-	if (m == NULL || mlen == NULL || sm == NULL || smlen < SIZE_LEN + SIZE_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + MIN_MSG_LEN + CRYPTO_FALCON_MIN_SIGNATURE_BYTES + MIN_MSG_LEN ||
-		smlen > SIZE_LEN + SIZE_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN + CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN || pk == NULL) {
+	if (m == NULL || mlen == NULL || sm == NULL || smlen < LEN_BYTES + LEN_BYTES + CRYPTO_ED25519_SIGNATURE_BYTES + MIN_MSG_LEN + CRYPTO_FALCON_MIN_SIGNATURE_BYTES + MIN_MSG_LEN ||
+		smlen > LEN_BYTES + LEN_BYTES + CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN + CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN || pk == NULL) {
 		return -1;
 	}
 
