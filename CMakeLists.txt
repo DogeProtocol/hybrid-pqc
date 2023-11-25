@@ -135,6 +135,7 @@ include(CMakePackageConfigHelpers)
 set(SOURCE_FILES falcon512/codec.c falcon512/common.c falcon512/fft.c falcon512/fpr.c falcon512/keygen.c falcon512/nist.c falcon512/rng.c falcon512/shake.c falcon512/sign.c falcon512/vrfy.c dilithium2/ntt.c dilithium2/ntt.h dilithium2/packing.c dilithium2/packing.h dilithium2/params.h dilithium2/poly.c dilithium2/poly.h dilithium2/polyvec.c dilithium2/polyvec.h dilithium2/reduce.c dilithium2/reduce.h dilithium2/rounding.c dilithium2/rounding.h dilithium2/sign.c dilithium2/sign.h dilithium2/symmetric.h dilithium2/symmetric-shake.c sphincs/address.c sphincs/context_shake.c sphincs/fors.c sphincs/hash_shake.c sphincs/merkle.c sphincs/sign.c sphincs/thash_shake_simple.c sphincs/utils.c sphincs/utilsx1.c sphincs/wots.c sphincs/wotsx1.c  random/randombytes.c common/fips202.c "common/hybrid-common.c" "tweetnacl/tweetnacl.c" "hybrid-falcon/hybrid.h" "hybrid-falcon/hybrid.c" "hybrid-dilithium/hybrid.h" "hybrid-dilithium/hybrid.c" "hybrid-dilithium-sphincs/hybrid.h" "hybrid-dilithium-sphincs/hybrid.c")
 add_library(hybridpqc SHARED ${SOURCE_FILES})
 add_executable(hybridpqctest ${SOURCE_FILES} "tests/test_hybrid.c")
+add_executable(randombytestest "random/randombytes.h" "random/randombytes.c" "random/randombytes_test.c")
  
 set_target_properties(hybridpqc
     PROPERTIES
@@ -146,6 +147,15 @@ set_target_properties(hybridpqc
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 set_target_properties(hybridpqctest
+    PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    VERSION ${HYBRIDPQC_VERSION_TEXT}
+    SOVERSION 2
+    # For Windows DLLs
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/exe")
+
+set_target_properties(randombytestest
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
@@ -226,4 +236,5 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS} ${PROJECT_
 # enable testing functionality
 enable_testing()
 
+add_test(NAME randombytestest COMMAND  $<TARGET_FILE:randombytestest>)
 add_test(NAME hybridpqctest COMMAND  $<TARGET_FILE:hybridpqctest>)

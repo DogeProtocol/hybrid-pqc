@@ -1,4 +1,4 @@
-#include "randombytes.c"
+#include "randombytes.h"
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -43,7 +43,8 @@ int __real_ioctl(int fd, int code, int* ret);
 // ======== Test definitions ========
 
 static void test_functional(void) {
-	uint8_t buf1[20] = {}, buf2[sizeof(buf1)] = {};
+	uint8_t buf1[20] = { 0 };
+	uint8_t buf2[sizeof(buf1)] = { 0 };
 	const int ret1 = randombytes(buf1, sizeof(buf1));
 	const int ret2 = randombytes(buf2, sizeof(buf2));
 	if (ret1 != 0 || ret2 != 0) {
@@ -55,8 +56,8 @@ static void test_functional(void) {
 }
 
 static void test_empty(void) {
-	const uint8_t zero[20] = {};
-	uint8_t buf[sizeof(zero)] = {};
+	const uint8_t zero[20] = {0};
+	uint8_t buf[sizeof(zero)] = {0};
 	const int ret = randombytes(buf, 0);
 	assert(ret == 0);
 	assert(memcmp(buf, zero, sizeof(zero)) == 0);
@@ -64,7 +65,7 @@ static void test_empty(void) {
 
 static void test_getrandom_syscall_partial(void) {
 	syscall_called = 0;
-	uint8_t buf[100] = {};
+	uint8_t buf[100] = {0};
 	const int ret = randombytes(buf, sizeof(buf));
 	assert(ret == 0);
 	assert(syscall_called >= 5);
@@ -75,8 +76,8 @@ static void test_getrandom_syscall_partial(void) {
 
 static void test_getrandom_syscall_interrupted(void) {
 	syscall_called = 0;
-	uint8_t zero[20] = {};
-	uint8_t buf[sizeof(zero)] = {};
+	uint8_t zero[20] = {0};
+	uint8_t buf[sizeof(zero)] = {0};
 	const int ret = randombytes(buf, sizeof(buf));
 	assert(ret == 0);
 	assert(memcmp(buf, zero, 20) != 0);
@@ -84,7 +85,7 @@ static void test_getrandom_syscall_interrupted(void) {
 
 static void test_getrandom_glib_partial(void) {
 	glib_getrandom_called = 0;
-	uint8_t buf[100] = {};
+	uint8_t buf[100] = {0};
 	const int ret = randombytes(buf, sizeof(buf));
 	assert(ret == 0);
 	assert(glib_getrandom_called >= 5);
@@ -95,15 +96,16 @@ static void test_getrandom_glib_partial(void) {
 
 static void test_getrandom_glib_interrupted(void) {
 	glib_getrandom_called = 0;
-	uint8_t zero[20] = {};
-	uint8_t buf[sizeof(zero)] = {};
+	uint8_t zero[20] = {0};
+	uint8_t buf[sizeof(zero)] = {0};
 	const int ret = randombytes(buf, sizeof(buf));
 	assert(ret == 0);
 	assert(memcmp(buf, zero, 20) != 0);
 }
 
 static void test_issue_17(void) {
-	uint8_t buf1[20] = {}, buf2[sizeof(buf1)] = {};
+	uint8_t buf1[20] = { 0 };
+	uint8_t buf2[sizeof(buf1)] = {0};
 	const int ret1 = randombytes(buf1, sizeof(buf1));
 	const int ret2 = randombytes(buf2, sizeof(buf2));
 	assert(ret1 == 0);
@@ -112,7 +114,8 @@ static void test_issue_17(void) {
 }
 
 static void test_issue_22(void) {
-	uint8_t buf1[20] = {}, buf2[sizeof(buf1)] = {};
+	uint8_t buf1[20] = {0};
+	uint8_t buf2[sizeof(buf1)] = {0};
 	const int ret1 = randombytes(buf1, sizeof(buf1));
 	const int ret2 = randombytes(buf2, sizeof(buf2));
 	assert(ret1 == 0);
@@ -122,7 +125,7 @@ static void test_issue_22(void) {
 
 static void test_issue_33(void) {
 	for (size_t idx = 0; idx < 100000; idx++) {
-		uint8_t buf[20] = {};
+		uint8_t buf[20] = {0};
 		const int ret = randombytes(&buf, sizeof(buf));
 		if (ret != 0) {
 			printf("error: %s\n", strerror(errno));
