@@ -9,36 +9,36 @@
 #include "merkle.h"
 #include "nistapi.h"
 #include "params.h"
+#include "../random/randombytes.h"
 #include "thash.h"
 #include "utils.h"
 #include "wots.h"
-#include "../random/randombytes.h"
 
 /*
  * Returns the length of a secret key, in bytes
  */
-size_t PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_secretkeybytes(void) {
+size_t PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_crypto_sign_secretkeybytes(void) {
     return CRYPTO_SECRETKEYBYTES;
 }
 
 /*
  * Returns the length of a public key, in bytes
  */
-size_t PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_publickeybytes(void) {
+size_t PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_crypto_sign_publickeybytes(void) {
     return CRYPTO_PUBLICKEYBYTES;
 }
 
 /*
  * Returns the length of a signature, in bytes
  */
-size_t PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_bytes(void) {
+size_t PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_crypto_sign_bytes(void) {
     return CRYPTO_BYTES;
 }
 
 /*
  * Returns the length of the seed required to generate a key pair, in bytes
  */
-size_t PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_seedbytes(void) {
+size_t PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_crypto_sign_seedbytes(void) {
     return CRYPTO_SEEDBYTES;
 }
 
@@ -47,7 +47,7 @@ size_t PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_seedbytes(void) {
  * Format sk: [SK_SEED || SK_PRF || PUB_SEED || root]
  * Format pk: [PUB_SEED || root]
  */
-int PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_seed_keypair(uint8_t *pk, uint8_t *sk,
+int PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_crypto_sign_seed_keypair(uint8_t *pk, uint8_t *sk,
                              const uint8_t *seed) {
     spx_ctx ctx;
 
@@ -79,14 +79,12 @@ int PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_seed_keypair(uint8_t *pk, u
  * Format sk: [SK_SEED || SK_PRF || PUB_SEED || root]
  * Format pk: [PUB_SEED || root]
  */
-int PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
+int PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
     uint8_t seed[CRYPTO_SEEDBYTES];
-    
     int r = randombytes(seed, CRYPTO_SEEDBYTES);
     if (r != 0) {
         return -1;
     }
-
     crypto_sign_seed_keypair(pk, sk, seed);
 
     return 0;
@@ -95,7 +93,7 @@ int PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_
 /**
  * Returns an array containing a detached signature.
  */
-int PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_signature(uint8_t *sig, size_t *siglen,
+int PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_crypto_sign_signature(uint8_t *sig, size_t *siglen,
                           const uint8_t *m, size_t mlen, const uint8_t *sk) {
     spx_ctx ctx;
 
@@ -128,7 +126,6 @@ int PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_signature(uint8_t *sig, siz
     if (r != 0) {
         return -1;
     }
-
     /* Compute the digest randomization value. */
     gen_message_random(sig, sk_prf, optrand, m, mlen, &ctx);
 
@@ -168,7 +165,7 @@ int PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_signature(uint8_t *sig, siz
 /**
  * Verifies a detached signature and message under a given public key.
  */
-int PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_verify(const uint8_t *sig, size_t siglen,
+int PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_crypto_sign_verify(const uint8_t *sig, size_t siglen,
                        const uint8_t *m, size_t mlen, const uint8_t *pk) {
     spx_ctx ctx;
     const uint8_t *pub_root = pk + SPX_N;
@@ -252,7 +249,7 @@ int PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_verify(const uint8_t *sig, 
 /**
  * Returns an array containing the signature followed by the message.
  */
-int PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign(uint8_t *sm, size_t *smlen,
+int PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_crypto_sign(uint8_t *sm, size_t *smlen,
                 const uint8_t *m, size_t mlen,
                 const uint8_t *sk) {
     size_t siglen;
@@ -268,21 +265,19 @@ int PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign(uint8_t *sm, size_t *smlen,
 /**
  * Verifies a given signature-message pair under a given public key.
  */
-int PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_crypto_sign_open(uint8_t *m, size_t *mlen,
+int PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_crypto_sign_open(uint8_t *m, size_t *mlen,
                      const uint8_t *sm, size_t smlen,
                      const uint8_t *pk) {
     /* The API caller does not necessarily know what size a signature should be
        but SPHINCS+ signatures are always exactly SPX_BYTES. */
     if (smlen < SPX_BYTES) {
-        memset(m, 0, smlen);
         *mlen = 0;
         return -1;
     }
 
     *mlen = smlen - SPX_BYTES;
-
+    
     if (crypto_sign_verify(sm, SPX_BYTES, sm + SPX_BYTES, *mlen, pk)) {
-        memset(m, 0, smlen);
         *mlen = 0;
         return -1;
     }

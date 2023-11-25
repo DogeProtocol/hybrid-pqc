@@ -1,17 +1,17 @@
 #ifndef SPX_PARAMS_H
 #define SPX_PARAMS_H
 
-#define SPX_NAMESPACE(s) PQCLEAN_SPHINCSSHAKE128FSIMPLE_CLEAN_##s
+#define SPX_NAMESPACE(s) PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_##s
 
 /* Hash output length in bytes. */
-#define SPX_N 16
+#define SPX_N 32
 /* Height of the hypertree. */
-#define SPX_FULL_HEIGHT 66
+#define SPX_FULL_HEIGHT 68
 /* Number of subtree layer. */
-#define SPX_D 22
+#define SPX_D 17
 /* FORS tree dimensions. */
-#define SPX_FORS_HEIGHT 6
-#define SPX_FORS_TREES 33
+#define SPX_FORS_HEIGHT 9
+#define SPX_FORS_TREES 35
 /* Winternitz parameter, */
 #define SPX_WOTS_W 16
 
