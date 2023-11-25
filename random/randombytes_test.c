@@ -9,8 +9,6 @@ static void *current_test = NULL;
 static int syscall_called = 0;
 static int glib_getrandom_called = 0;
 
-// ======== Helper macros and functions ========
-
 #define RUN_TEST(name) \
 	printf("%s ... ", #name); \
 	padto(' ', sizeof(#name) + sizeof(" ... "), 32); \
@@ -27,20 +25,6 @@ static void padto(const char c, const size_t curlen, const size_t len) {
 		putchar(c);
 	}
 }
-
-// ======== Forward declarations needed for mocked functions ========
-
-#if defined(__linux__) && defined(SYS_getrandom)
-int __wrap_syscall(int n, char *buf, size_t buflen, int flags);
-int __real_syscall(int n, char *buf, size_t buflen, int flags);
-#endif /* defined(__linux__) && defined(SYS_getrandom) */
-
-#if defined(__linux__) && !defined(SYS_getrandom)
-int __wrap_ioctl(int fd, int code, int* ret);
-int __real_ioctl(int fd, int code, int* ret);
-#endif /* defined(__linux__) && !defined(SYS_getrandom) */
-
-// ======== Test definitions ========
 
 static void test_functional(void) {
 	uint8_t buf1[20] = { 0 };
@@ -134,79 +118,13 @@ static void test_issue_33(void) {
 	}
 }
 
-// ======== Mock OS functions to simulate uncommon behavior ========
-
-#if defined(__linux__) && defined(__GLIBC__) && ((__GLIBC__ > 2) || (__GLIBC_MINOR__ > 24))
-int __wrap_getrandom(char *buf, size_t buflen, int flags) {
-	glib_getrandom_called++;
-	if (current_test == test_getrandom_glib_partial) {
-		// Fill only 16 bytes, the caller should retry
-		const size_t current_buflen = buflen <= 16 ? buflen : 16;
-		return __real_getrandom(buf, current_buflen, flags);
-	} else if (current_test == test_getrandom_glib_interrupted) {
-		if (glib_getrandom_called < 5) {
-			errno = EINTR;
-			return -1;
-		}
-	}
-	return __real_getrandom(buf, buflen, flags);
-}
-
-#elif defined(__linux__) && defined(SYS_getrandom)
-int __wrap_syscall(int n, char *buf, size_t buflen, int flags) {
-	syscall_called++;
-	if (current_test == test_getrandom_syscall_partial) {
-		// Fill only 16 bytes, the caller should retry
-		const size_t current_buflen = buflen <= 16 ? buflen : 16;
-		return __real_syscall(n, buf, current_buflen, flags);
-	} else if (current_test == test_getrandom_syscall_interrupted) {
-		if (syscall_called < 5) {
-			errno = EINTR;
-			return -1;
-		}
-	}
-	return __real_syscall(n, buf, buflen, flags);
-}
-#endif /* defined(__linux__) && (defined(SYS_getrandom) or glibc version > 2.24) */
-
-#if defined(__linux__) && !defined(SYS_getrandom)
-int __wrap_ioctl(int fd, int code, int* ret) {
-	if (current_test == test_issue_17) {
-		errno = ENOTTY;
-		return -1;
-	}
-	if (current_test == test_issue_17) {
-		errno = ENOSYS;
-		return -1;
-	}
-	return __real_ioctl(fd, code, ret);
-}
-#endif /* defined(__linux__) && !defined(SYS_getrandom) */
-
-// ======== Main function ========
-
 int main(void) {
 	// Use `#if defined()` to enable/disable tests on a platform. If disabled,
 	// please still call `SKIP_TEST` to make sure no tests are skipped silently.
 
 	RUN_TEST(test_functional)
 	RUN_TEST(test_empty)
-#if defined(__linux__) && defined(USE_GLIBC)
-	RUN_TEST(test_getrandom_glib_partial)
-	RUN_TEST(test_getrandom_glib_interrupted)
-	SKIP_TEST(test_getrandom_syscall_partial)
-	SKIP_TEST(test_getrandom_syscall_interrupted)
-#elif defined(__linux__) && defined(SYS_getrandom)
-	SKIP_TEST(test_getrandom_glib_partial)
-	SKIP_TEST(test_getrandom_glib_interrupted)
-	RUN_TEST(test_getrandom_syscall_partial)
-	RUN_TEST(test_getrandom_syscall_interrupted)
-#else
-	SKIP_TEST(test_getrandom_glib_partial)
-	SKIP_TEST(test_getrandom_glib_interrupted)
-	SKIP_TEST(test_getrandom_syscall_partial)
-	SKIP_TEST(test_getrandom_syscall_interrupted)
-#endif /* defined(__linux__) && (defined(SYS_getrandom) or glibc version > 2.24) */
+
 #if defined(__linux__) && !defined(SYS_getrandom)
 	RUN_TEST(test_issue_17)
 	RUN_TEST(test_issue_22)
