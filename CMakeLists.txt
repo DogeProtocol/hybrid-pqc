@@ -20,11 +20,9 @@ if(POLICY CMP0066)
 endif()
 if(POLICY CMP0067)
     cmake_policy(SET CMP0067 NEW)
-endif()
-
-
+endif()  
+ 
 project(hybridpqc C ASM)
-
 
 option(OQS_DIST_BUILD "Build distributable library with optimized code for several CPU microarchitectures. Enables run-time CPU feature detection." ON)
 option(OQS_BUILD_ONLY_LIB "Build only hybridpqc and do not expose build targets for tests, documentation, and pretty-printing available." OFF)
@@ -41,6 +39,8 @@ set(HYBRIDPQC_VERSION_TEXT "0.0.1-dev")
 set(HYBRIDPQC_COMPILE_BUILD_TARGET "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_HOST_SYSTEM}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set( CMAKE_C_FLAGS   "-fstack-protector -fstack-protector-all" )
+set( CMAKE_CXX_FLAGS "-fstack-protector -fstack-protector-all" )
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64")
     set(ARCH "x86_64")
@@ -107,7 +107,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInf
 else()
     set(OQS_DEBUG_BUILD OFF)
 endif()
-
+ 
 option(OQS_SPEED_USE_ARM_PMU "Use ARM Performance Monitor Unit during benchmarking" OFF)
 set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_VENDOR "www.dogeprotocol.org")
@@ -132,9 +132,11 @@ endif()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-add_library(hybridpqc SHARED falcon512/codec.c falcon512/common.c falcon512/fft.c falcon512/fpr.c falcon512/keygen.c falcon512/nist.c falcon512/rng.c falcon512/shake.c falcon512/sign.c falcon512/vrfy.c random/randombytes.c  "tweetnacl/tweetnacl.c"  "hybrid/hybrid.h" "hybrid/hybrid.c")
-add_executable(hybridpqctest falcon512/codec.c falcon512/common.c falcon512/fft.c falcon512/fpr.c falcon512/keygen.c falcon512/nist.c falcon512/rng.c falcon512/shake.c falcon512/sign.c falcon512/vrfy.c random/randombytes.c  "tweetnacl/tweetnacl.c"  "hybrid/hybrid.h" "hybrid/hybrid.c" "tests/test_hybrid.c")
-
+set(SOURCE_FILES falcon512/codec.c falcon512/common.c falcon512/fft.c falcon512/fpr.c falcon512/keygen.c falcon512/nist.c falcon512/rng.c falcon512/shake.c falcon512/sign.c falcon512/vrfy.c dilithium2/ntt.c dilithium2/ntt.h dilithium2/packing.c dilithium2/packing.h dilithium2/params.h dilithium2/poly.c dilithium2/poly.h dilithium2/polyvec.c dilithium2/polyvec.h dilithium2/reduce.c dilithium2/reduce.h dilithium2/rounding.c dilithium2/rounding.h dilithium2/sign.c dilithium2/sign.h dilithium2/symmetric.h dilithium2/symmetric-shake.c sphincs/address.c sphincs/context_shake.c sphincs/fors.c sphincs/hash_shake.c sphincs/merkle.c sphincs/sign.c sphincs/thash_shake_simple.c sphincs/utils.c sphincs/utilsx1.c sphincs/wots.c sphincs/wotsx1.c  random/randombytes.c common/fips202.c "common/hybrid-common.c" "tweetnacl/tweetnacl.c" "hybrid-falcon/hybrid.h" "hybrid-falcon/hybrid.c" "hybrid-dilithium/hybrid.h" "hybrid-dilithium/hybrid.c" "hybrid-dilithium-sphincs/hybrid.h" "hybrid-dilithium-sphincs/hybrid.c")
+add_library(hybridpqc SHARED ${SOURCE_FILES})
+add_executable(hybridpqctest ${SOURCE_FILES} "tests/test_hybrid.c")
+add_executable(randombytestest "random/randombytes.h" "random/randombytes.c" "random/randombytes_test.c")
+ 
 set_target_properties(hybridpqc
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
@@ -145,6 +147,15 @@ set_target_properties(hybridpqc
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 set_target_properties(hybridpqctest
+    PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    VERSION ${HYBRIDPQC_VERSION_TEXT}
+    SOVERSION 2
+    # For Windows DLLs
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/exe")
+
+set_target_properties(randombytestest
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
@@ -209,15 +220,24 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wconversion)
 endif()
 
-set(HYBRIDPQC_HEADERS ${PROJECT_SOURCE_DIR}/falcon512/api.h
-                   ${PROJECT_SOURCE_DIR}/falcon512/fpr.h
-                   ${PROJECT_SOURCE_DIR}/falcon512/inner.h
-                   ${PROJECT_SOURCE_DIR}/tweetnacl/tweetnacl.h
-                   ${PROJECT_SOURCE_DIR}/hybrid/hybrid.h
-                   ${PROJECT_SOURCE_DIR}/random/randombytes.h)
-
-install(FILES ${HYBRIDPQC_HEADERS}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hybridpqc)
-
+# HYBRIDPQC HEADRES falcon-512
+set(HYBRIDPQC_HEADERS_FALCON_512 ${PROJECT_SOURCE_DIR}/falcon512/api.h)
+install(FILES ${HYBRIDPQC_HEADERS_FALCON_512} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hybridpqc)
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/hybridpqc)
-execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS} ${PROJECT_BINARY_DIR}/include/hybridpqc)
+execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS_FALCON_512} ${PROJECT_BINARY_DIR}/include/hybridpqc/falcon512.h)
+
+# HYBRIDPQC HEADRES hybrid-falcon
+set(HYBRIDPQC_HEADERS_HYBRID_FALCON_512 ${PROJECT_SOURCE_DIR}/hybrid-falcon/hybrid.h)
+install(FILES ${HYBRIDPQC_HEADERS_HYBRID_FALCON_512} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hybridpqc)
+execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS_HYBRID_FALCON_512} ${PROJECT_BINARY_DIR}/include/hybridpqc/hybridfalcon512.h)
+
+# HYBRIDPQC HEADRES hybrid-dilithium-sphincs
+set(HYBRIDPQC_HEADERS_HYBRID_EDS ${PROJECT_SOURCE_DIR}/hybrid-dilithium-sphincs/hybrid.h)
+install(FILES ${HYBRIDPQC_HEADERS_HYBRID_EDS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hybridpqc)
+execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS_HYBRID_EDS} ${PROJECT_BINARY_DIR}/include/hybridpqc/hybrideds.h)
+
+# enable testing functionality
+enable_testing()
+
+add_test(NAME randombytestest COMMAND  $<TARGET_FILE:randombytestest>)
+add_test(NAME hybridpqctest COMMAND  $<TARGET_FILE:hybridpqctest>)

@@ -37,26 +37,10 @@ THE SOFTWARE.
 #include <stddef.h>
 #include <string.h>
 #include "hybrid.h"
+#include "../common/hybrid-common.h"
 #include "../falcon512/api.h"
 #include "../tweetnacl/tweetnacl.h"
 #include "../random/randombytes.h"
-
-const int MIN_MSG_LEN = 1;
-const int MAX_MSG_LEN = 64;
-const int SIZE_LEN = 2; //2 for size
-
-const int CRYPTO_ED25519_PUBLICKEY_BYTES = 32;
-const int CRYPTO_ED25519_SECRETKEY_BYTES = 64;
-const int CRYPTO_ED25519_SECRETKEY_WITHOUT_PUBLIC_KEY_BYTES = 32;
-const int CRYPTO_ED25519_SIGNATURE_BYTES = 64;
-
-const int LEN_BYTES = 2;
-const int CRYPTO_FALCON_PUBLICKEY_BYTES = 897;
-const int CRYPTO_FALCON_SECRETKEY_BYTES = 1281;
-const int CRYPTO_FALCON_SECRETKEY_WITH_PUBLIC_KEY_BYTES = 1281 + 897;
-const int CRYPTO_FALCON_NONCE_LENGTH = 40;
-const int CRYPTO_FALCON_MIN_SIGNATURE_BYTES = 600 + 40 + 2; //Signature + Nonce + 2 for size
-const int CRYPTO_FALCON_MAX_SIGNATURE_BYTES = 690 + 40 + 2; //Signature + Nonce + 2 for size
 
 const int CRYPTO_HYBRID_PUBLICKEY_BYTES = 32 + 897;
 const int CRYPTO_HYBRID_SECRETKEY_BYTES = 64 + 1281;
@@ -106,15 +90,68 @@ Falcon Signature is variable length, between 600 to 690. To give predicatable le
 
 */
 
+int crypto_sign_falcon_ed25519_keypair_seed(unsigned char* pk, unsigned char* sk, unsigned char* seed) {
+	if (pk == NULL || sk == NULL) {
+		return -1;
+	}
+
+	unsigned char pk1[32] = { 0 }; //CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned char sk1[64] = { 0 }; //CRYPTO_ED25519_SECRETKEY_BYTES
+	unsigned char pk2[897] = { 0 }; //CRYPTO_FALCON_PUBLICKEY_BYTES
+	unsigned char sk2[1281 + 897] = { 0 }; //CRYPTO_FALCON_SECRETKEY_BYTES
+
+	unsigned char seed1[32] = { 0 }; //SEED_LENGTH_ED25519
+	unsigned char seed2[48] = { 0 }; //SEED_LENGTH_FALCON
+
+	for (int i = 0; i < SEED_LENGTH_ED25519; i++) {
+		seed1[i] = seed[i];
+	}
+
+	for (int i = 0; i < SEED_LENGTH_FALCON; i++) {
+		seed2[i] = seed[i + SEED_LENGTH_ED25519];
+	}
+
+	int r1 = crypto_sign_ed25519_keypair_seed(pk1, sk1, seed1);
+	if (r1 != 0) {
+		return -2;
+	}
+
+	for (int i = 0; i < CRYPTO_ED25519_PUBLICKEY_BYTES; i++) {
+		pk[i] = pk1[i];
+	}
+
+	for (int i = 0; i < CRYPTO_ED25519_SECRETKEY_BYTES; i++) {
+		sk[i] = sk1[i];
+	}
+
+	int r2 = crypto_sign_falcon_keypair_seed(pk2, sk2, seed2, sizeof seed2);
+
+	if (r2 != 0) {
+		return -3;
+	}
+
+	for (int i = 0; i < CRYPTO_FALCON_SECRETKEY_BYTES; i++) {
+		sk[CRYPTO_ED25519_SECRETKEY_BYTES + i] = sk2[i];
+	}
+
+	for (int i = 0; i < CRYPTO_FALCON_PUBLICKEY_BYTES; i++) {
+		pk[CRYPTO_ED25519_PUBLICKEY_BYTES + i] = pk2[i];
+		sk[CRYPTO_ED25519_SECRETKEY_BYTES + CRYPTO_FALCON_SECRETKEY_BYTES + i] = pk2[i]; //copy public key
+	}
+
+
+	return 0;
+}
+
 int crypto_sign_falcon_ed25519_keypair(unsigned char* pk, unsigned char* sk) {
 	if (pk == NULL || sk == NULL) {
 		return -1;
 	}
 	
-	unsigned char pk1[32]; //CRYPTO_ED25519_PUBLICKEY_BYTES
-	unsigned char sk1[64]; //CRYPTO_ED25519_SECRETKEY_BYTES
-	unsigned char pk2[897]; //CRYPTO_FALCON_PUBLICKEY_BYTES
-	unsigned char sk2[1281 + 897]; //CRYPTO_FALCON_SECRETKEY_BYTES
+	unsigned char pk1[32] = { 0 }; //CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned char sk1[64] = { 0 }; //CRYPTO_ED25519_SECRETKEY_BYTES
+	unsigned char pk2[897] = { 0 }; //CRYPTO_FALCON_PUBLICKEY_BYTES
+	unsigned char sk2[1281] = { 0 }; //CRYPTO_FALCON_SECRETKEY_BYTES
 
 	int r1 = crypto_sign_ed25519_keypair(pk1, sk1);
 	if (r1 != 0) {
@@ -159,10 +196,11 @@ int crypto_sign_falcon_ed25519(unsigned char* sm, unsigned long long* smlen,
 	unsigned long long sigLen1 = 0;
 	unsigned long long sigLen2 = 0;
 
-	unsigned char sig1[64 + 64]; //CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN
-	unsigned char sig2[690 + 40 + 2 + 64]; //CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN
-	unsigned char sk1[64]; //CRYPTO_ED25519_SECRETKEY_BYTES
-	unsigned char sk2[1281]; //CRYPTO_FALCON_SECRETKEY_BYTES
+	unsigned char sig1[64 + 64] = { 0 }; //CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN
+	unsigned char sig2[690 + 40 + 2 + 64] = { 0 }; //CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN
+	unsigned char sk1[64] = { 0 }; //CRYPTO_ED25519_SECRETKEY_BYTES
+	unsigned char sk2[1281] = { 0 }; //CRYPTO_FALCON_SECRETKEY_BYTES
+
 
 	//Copy sk1 from input
 	for (int i = 0;i < CRYPTO_ED25519_SECRETKEY_BYTES;i++) {
@@ -233,8 +271,8 @@ int crypto_sign_falcon_ed25519_open(unsigned char* m, unsigned long long* mlen,
 	const unsigned char* sm, unsigned long long smlen,
 	const unsigned char* pk) {
 
-	if (m == NULL || mlen == NULL || sm == NULL || smlen < SIZE_LEN + SIZE_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + MIN_MSG_LEN + CRYPTO_FALCON_MIN_SIGNATURE_BYTES + MIN_MSG_LEN ||
-		smlen > SIZE_LEN + SIZE_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN + CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN || pk == NULL) {
+	if (m == NULL || mlen == NULL || sm == NULL || smlen < LEN_BYTES + LEN_BYTES + CRYPTO_ED25519_SIGNATURE_BYTES + MIN_MSG_LEN + CRYPTO_FALCON_MIN_SIGNATURE_BYTES + MIN_MSG_LEN ||
+		smlen > LEN_BYTES + LEN_BYTES + CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN + CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN || pk == NULL) {
 		return -1;
 	}
 
@@ -253,14 +291,14 @@ int crypto_sign_falcon_ed25519_open(unsigned char* m, unsigned long long* mlen,
 		return sig2Len;
 	}
 
-	unsigned char msgFromSignature1[64 + 64 + 32]; //MAX_MSG_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned char msgFromSignature1[64 + 64 + 32] = { 0 }; //MAX_MSG_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_ED25519_PUBLICKEY_BYTES
 	unsigned long long msgFromSignatureLen1 = 0;
-	unsigned char msgFromSignature2[64]; //MAX_MSG_LEN
+	unsigned char msgFromSignature2[64] = { 0 }; //MAX_MSG_LEN
 	unsigned long long msgFromSignatureLen2 = 0;
-	unsigned char sig1[64 + 64]; //CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN
-	unsigned char sig2[2 + 40 + 64 + 690]; //SIZE_LEN + CRYPTO_FALCON_NONCE_LENGTH + CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN
-	unsigned char pk1[32]; //CRYPTO_ED25519_PUBLICKEY_BYTES
-	unsigned char pk2[897]; //CRYPTO_FALCON_PUBLICKEY_BYTES
+	unsigned char sig1[64 + 64] = { 0 }; //CRYPTO_ED25519_SIGNATURE_BYTES + MAX_MSG_LEN
+	unsigned char sig2[2 + 40 + 64 + 690] = { 0 }; //SIZE_LEN + CRYPTO_FALCON_NONCE_LENGTH + CRYPTO_FALCON_MAX_SIGNATURE_BYTES + MAX_MSG_LEN
+	unsigned char pk1[32] = { 0 }; //CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned char pk2[897] = { 0 }; //CRYPTO_FALCON_PUBLICKEY_BYTES
 
 	//Copy Sig1 from source, including message
 	for (int i = 0;i < (int)sig1Len;i++) {
@@ -306,7 +344,6 @@ int crypto_sign_falcon_ed25519_open(unsigned char* m, unsigned long long* mlen,
 		pk2[i] = pk[i + CRYPTO_ED25519_PUBLICKEY_BYTES];
 	}
 
-
 	int r2 = crypto_sign_falcon_open(msgFromSignature2, &msgFromSignatureLen2, sig2, sig2Len, pk2);
 	if (r2 != 0) {
 		return -6;
@@ -344,7 +381,7 @@ int crypto_verify_falcon_ed25519(unsigned char* m, unsigned long long mlen,
 		return -1;
 	}
 	
-	unsigned char msgFromSignature1[64 + 64 + 32]; //MAX_MSG_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_ED25519_PUBLICKEY_BYTES
+	unsigned char msgFromSignature1[64 + 64 + 32] = { 0 }; //MAX_MSG_LEN + CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_ED25519_PUBLICKEY_BYTES
 	unsigned long long msgFromSignatureLen1 = 0;
 
 	int r = crypto_sign_falcon_ed25519_open(msgFromSignature1, &msgFromSignatureLen1, sm, smlen, pk);
@@ -374,8 +411,8 @@ int crypto_public_key_from_private_key_falcon_ed25519(unsigned char* pk, const u
 	}
 
 	//Verify that public-key matches private-key
-	unsigned char msg[64];
-	unsigned char sig2[798 + 64];
+	unsigned char msg[64] = { 0 };
+	unsigned char sig2[798 + 64] = { 0 };
 	unsigned long long sigLen;
 	unsigned long long msgLen;
 

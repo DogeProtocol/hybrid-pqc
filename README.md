@@ -1,3 +1,5 @@
+[![CMake on multiple platforms](https://github.com/DogeProtocol/hybrid-pqc/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/DogeProtocol/hybrid-pqc/actions/workflows/cmake-multi-platform.yml)
+
 # Hybrid Post Quantum Cryptography
 While lattice based post-quantum cryptography schemes such as Falcon and Dilithium have been standardized, they haven’t 
 been battle-tested widely over the years like RSA and Elliptic Curve vased crypto-schemes. It's possible that newer category of attacks on Lattice based cryptography may come to light.
@@ -17,6 +19,9 @@ model, since it will be abstracted away.
 
 Some disadvantages of the hybrid model are increased complexity, increased risk of implementation bugs, increased compute time, increased 
 storage, and bandwidth requirements. However, the security benefits of the hybrid model outweigh these disadvantages.
+
+## Deterministic Key Generation
+A deterministic version of key generation has also been added. For example, this can be used for seed phrase based wallet generation for blockchains. The size of the seed is 80 bytes; 48 bytes for Falcon and 32 bytes for ed25519. The seed should be generated using a CSPRNG. 
 
 ### Warning
 This is test software, not yet ready for production use. Do not use in production systems!
@@ -79,30 +84,6 @@ These numbers were evaluated on an [AWS t2.medium instance](https://aws.amazon.c
 Binaries can be generated using Visual Studio 2019 with the [CMake Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools) extension installed. The same options as explained above for Linux/macOS can be used and build artifacts are generated in the specified `build` folders.
 
 If you want to create Visual Studio build files, e.g., if not using `ninja`, be sure to _not_ pass the parameter `-GNinja` to the `cmake` command as exemplified above. You can then build all components using `msbuild`, e.g. as follows: `msbuild ALL_BUILD.vcxproj` and install all artifacts e.g. using this command `msbuild INSTALL.vcxproj`.
-
-#### Windows alternate installation method
-If any of the below files are not available for download, you may have to download a newer version from their corresponding project file locations.
-1. Download cmake: https://github.com/Kitware/CMake/releases/download/v3.25.1/cmake-3.25.1-windows-x86_64.zip
-2. Extract the downloaded file to c:\cmake (such that bin folder location is c:\cmake\bin)
-3. Download ninja: https://github.com/ninja-build/ninja/releases/download/v1.11.1/ninja-win.zip
-4. Extract the downloaded file to c:\ninja
-5. Download compiler tools: https://github.com/niXman/mingw-builds-binaries/releases/download/12.2.0-rt_v10-rev2/x86_64-12.2.0-release-win32-seh-msvcrt-rt_v10-rev2.7z
-6. Extract the downloaded file to C:\mingw64 (such that the bin folder location is C:\mingw64\bin). You may require 7z file extractor that can be downloaded from https://www.7-zip.org/
-7. Set the environment variables as below:
-
-       set PATH=%PATH%;c:\cmake\bin;c:\ninja;c:\mingw64\bin
-8. Get the source:
-
-		git clone https://github.com/dogeprotocol/hybrid-pqc.git
-		cd hybrid-pqc
-
-	and build:
-
-		mkdir build 
-		cd build
-		cmake -G Ninja -DBUILD_SHARED_LIBS=ON ..
-		ninja    
-
 
 ### Web Assembly WASM
 

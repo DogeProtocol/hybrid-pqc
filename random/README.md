@@ -1,7 +1,5 @@
 # Pluggable randombytes function
 
-[![GitHub Actions](https://github.com/dsprenkels/randombytes/workflows/Tests/badge.svg)](https://github.com/dsprenkels/randombytes/actions/workflows/test.yml)
-
 `randombytes` is a library that exposes a single function for retrieving
 _crypto-secure_ random bytes. It is loosely based on [Libsodium's random bytes
 API][libsodium_randombytes]. If you can, you should use that one. Otherwise, you

@@ -10,7 +10,11 @@
 #if defined(_WIN32)
 /* Windows */
 # include <windows.h>
+# include <bcrypt.h>
 # include <wincrypt.h> /* CryptAcquireContext, CryptGenRandom */
+#include <winternl.h>
+#include <ntstatus.h>
+#pragma comment(lib, "bcrypt.lib")
 #endif /* defined(_WIN32) */
 
 /* wasi */
@@ -78,18 +82,34 @@
 #if defined(_WIN32)
 static int randombytes_win32_randombytes(void* buf, size_t n)
 {
+	NTSTATUS    Status;
+
+	memset(buf, 0, n);
+
+	Status = BCryptGenRandom(
+		NULL,                       // Alg Handle pointer; NUll is passed as BCRYPT_USE_SYSTEM_PREFERRED_RNG flag is used
+		buf,                     // Address of the buffer that recieves the random number(s)
+		n,                 // Size of the buffer in bytes
+		BCRYPT_USE_SYSTEM_PREFERRED_RNG); // Flags                  
+
+	if (NT_SUCCESS(Status))
+	{
+		return 0;
+	}
+
+	//Fallback if BCryptGenRandom failed
 	HCRYPTPROV ctx;
 	BOOL tmp;
 	DWORD to_read = 0;
 	const size_t MAX_DWORD = 0xFFFFFFFF;
 
 	tmp = CryptAcquireContext(&ctx, NULL, NULL, PROV_RSA_FULL,
-	                          CRYPT_VERIFYCONTEXT);
+		CRYPT_VERIFYCONTEXT);
 	if (tmp == FALSE) return -1;
 
 	while (n > 0) {
 		to_read = (DWORD)(n < MAX_DWORD ? n : MAX_DWORD);
-		tmp = CryptGenRandom(ctx, to_read, (BYTE*) buf);
+		tmp = CryptGenRandom(ctx, to_read, (BYTE*)buf);
 		if (tmp == FALSE) return -1;
 		buf = ((char*)buf) + to_read;
 		n -= to_read;
@@ -329,7 +349,7 @@ static int randombytes_js_randombytes_nodejs(void *buf, size_t n) {
 		errno = ENOSYS;
 		return -1;
 	}
-	return ret;
+	return -3;
 	assert(false); // Unreachable
 }
 #endif /* defined(__EMSCRIPTEN__) */
