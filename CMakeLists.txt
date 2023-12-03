@@ -231,10 +231,12 @@ set(HYBRIDPQC_HEADERS_HYBRID_FALCON_512 ${PROJECT_SOURCE_DIR}/hybrid-falcon/hybr
 install(FILES ${HYBRIDPQC_HEADERS_HYBRID_FALCON_512} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hybridpqc)
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS_HYBRID_FALCON_512} ${PROJECT_BINARY_DIR}/include/hybridpqc/hybridfalcon512.h)
 
+
 # HYBRIDPQC HEADRES hybrid-dilithium-sphincs
 set(HYBRIDPQC_HEADERS_HYBRID_EDS ${PROJECT_SOURCE_DIR}/hybrid-dilithium-sphincs/hybrid.h)
 install(FILES ${HYBRIDPQC_HEADERS_HYBRID_EDS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hybridpqc)
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS_HYBRID_EDS} ${PROJECT_BINARY_DIR}/include/hybridpqc/hybrideds.h)
+
 
 # enable testing functionality
 enable_testing()
