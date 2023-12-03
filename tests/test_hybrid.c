@@ -29,6 +29,7 @@ int test_hybrid_dilithium_sphincs_deterministic();
 int test_hybrid_compact_dilithium_sphincs(void);
 int test_hybrid_dilithium(void);
 int test_hybrid_dilithium_deterministic(void);
+int test_hybrid_compact_dilithium_sphincs_perf(void);
 int test_multiple(int count);
 int main(int argc, char* argv[]);
 
@@ -1668,6 +1669,93 @@ int test_hybrid_dilithium_deterministic() {
 	return 0;
 }
 
+int test_hybrid_compact_dilithium_sphincs_perf() {
+	printf("\n test_hybrid_compact_dilithium_sphincs () start");
+
+	unsigned char pk[32 + 1312 + 64];
+	unsigned char pk2[32 + 1312 + 64];
+	unsigned char sk[64 + 2560 + 1312 + 128];
+	unsigned char sig1[2 + 64 + 2420 + 40 + 32];
+	unsigned char sig2[2 + 64 + 2420 + 40 + 32];
+	unsigned char msg1[32];
+	unsigned char msg2[32];
+	unsigned char msg1output[32];
+	unsigned char msg2output[32];
+	unsigned long long sigLen1 = 0;
+	unsigned long long sigLen2 = 0;
+	unsigned long long msgLen1 = 0;
+	unsigned long long msgLen2 = 0;
+	const int MSG_LEN = 32;
+	const int SIG_LEN = 2 + 64 + 2420 + 40 + MSG_LEN;
+	clock_t startTime;
+	clock_t endTime;
+	int r = 0;
+
+	printf("\n crypto_sign_dilithium_ed25519_sphincs_keypair perf 1000 iterations");
+	startTime = get_nano_sec();
+	for (int i = 0; i < 1000; i++) {
+		r = crypto_sign_dilithium_ed25519_sphincs_keypair(pk, sk);
+		if (r != 0) {
+			printf("\n crypto_sign_dilithium_ed25519_sphincs_keypair failed %d", (int)r);
+			return -1;
+		}
+	}
+	endTime = get_nano_sec();
+	print_elapsed(startTime, endTime);
+
+	r = randombytes(msg1, MSG_LEN * sizeof(unsigned char));
+	if (r != 0) {
+		printf("\n randombytes failed %d", (int)r);
+		return -2;
+	}
+
+	printf("\n crypto_sign_compact_dilithium_ed25519_sphincs perf 1000 iterations");
+	startTime = get_nano_sec();
+	for (int i = 0; i < 1000; i++) {
+		r = crypto_sign_compact_dilithium_ed25519_sphincs(sig1, &sigLen1, msg1, MSG_LEN, sk);
+		if (r != 0) {
+			printf("\n crypto_sign_compact_dilithium_ed25519_sphincs failed %d", (int)r);
+			return -3;
+		}
+
+		if (sigLen1 != SIG_LEN) {
+			printf("\n crypto_sign_compact_dilithium_ed25519_sphincs sigLen error %d", (int)sigLen1);
+			return -4;
+		}
+	}
+	endTime = get_nano_sec();
+	print_elapsed(startTime, endTime);
+
+	printf("\n crypto_sign_compact_dilithium_ed25519_sphincs_open perf 10000 iterations");
+	for (int i = 0; i < 10000; i++) {
+		unsigned char msgFromSignature1[64] = { 0 }; //MAX_MSG_LEN
+		unsigned long long msgFromSignatureLen1 = 0;
+
+		r = crypto_sign_compact_dilithium_ed25519_sphincs_open(msgFromSignature1, &msgFromSignatureLen1, sig1, sigLen1, pk);
+		if (r != 0) {
+			printf("\n crypto_sign_compact_dilithium_ed25519_sphincs_open A failed %d", (int)r);
+			return -5;
+		}
+	}
+	endTime = get_nano_sec();
+	print_elapsed(startTime, endTime);
+
+	printf("\n crypto_verify_compact_dilithium_ed25519_sphincs perf 10000 iterations");
+	for (int i = 0; i < 10000; i++) {
+		r = crypto_verify_compact_dilithium_ed25519_sphincs(msg1, MSG_LEN, sig1, sigLen1, pk);
+		if (r != 0) {
+			printf("\n crypto_verify_compact_dilithium_ed25519_sphincs failed %d", (int)r);
+			return -8;
+		}
+	}
+	endTime = get_nano_sec();
+	print_elapsed(startTime, endTime);
+
+	printf("\n crypto_verify_compact_dilithium_ed25519_sphincs perf () ok");
+
+	return 0;
+}
+
 int test_multiple(int count) {
 	printf("\n test_multiple hybrid %d", count);
 	for (int i = 0;i < count;i++) {
@@ -1681,6 +1769,11 @@ int test_multiple(int count) {
 
 int main(int argc, char* argv[]) {
 	int result;
+
+	result = test_hybrid_compact_dilithium_sphincs_perf();
+	if (result != 0) {
+		return result;
+	}
 
 	result = test_hybrid_compact_dilithium_sphincs();
 	if (result != 0) {

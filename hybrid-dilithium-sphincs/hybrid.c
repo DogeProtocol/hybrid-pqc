@@ -262,10 +262,9 @@ int crypto_sign_dilithium_ed25519_sphincs(unsigned char* sm, unsigned long long*
 		return -6;
 	}
 
-	//Set totalLen of sig, excluding LEN_BYTES
-	unsigned long long msgLen = mlen;
+	//Set signature id and message length
 	sm[0] = (unsigned char)DILITHIUM_ED25519_SPHINCS_FULL_ID;
-	sm[1] = (unsigned char)msgLen;
+	sm[1] = (unsigned char)mlen;
 
 	//Copy ed25519 signature (which includes the message), to output	
 	for (int i = 0;i < (int)sigLen1;i++) {
@@ -478,10 +477,9 @@ int crypto_sign_compact_dilithium_ed25519_sphincs(unsigned char* sm, unsigned lo
 		return -5;
 	}
 
-	//Store the original message length
-	unsigned long long msgLen = mlen;
+	//Set signature id and message length
 	sm[0] = (unsigned char)DILITHIUM_ED25519_SPHINCS_COMPACT_ID;
-	sm[1] = (unsigned char)msgLen;
+	sm[1] = (unsigned char)mlen;
 
 	//Copy ed25519 signature to output	
 	for (int i = 0; i < CRYPTO_ED25519_SIGNATURE_BYTES; i++) {

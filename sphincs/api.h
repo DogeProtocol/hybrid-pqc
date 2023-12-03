@@ -1,6 +1,22 @@
 #ifndef PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_API_H
 #define PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_API_H
 
+
+#if defined(_WIN32)
+#define HYBRID_API __declspec(dllexport)
+#else
+#define HYBRID_API __attribute__((visibility("default")))
+#endif
+
+#if defined(OQS_SYS_UEFI)
+#undef HYBRID_API
+#define HYBRID_API
+#endif
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -74,4 +90,11 @@ int PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_crypto_sign(uint8_t *sm, size_t *smlen,
 int PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_crypto_sign_open(uint8_t *m, size_t *mlen,
         const uint8_t *sm, size_t smlen,
         const uint8_t *pk);
+
+#endif
+
+
+#if defined(__cplusplus)
+} // extern "C"
+
 #endif
