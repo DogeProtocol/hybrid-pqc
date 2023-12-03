@@ -32,4 +32,7 @@ extern const int CRYPTO_FALCON_MAX_SIGNATURE_BYTES;
 extern const int NONCE_BYTES;
 extern const int HASH_LENGTH;
 
+extern const int DILITHIUM_ED25519_SPHINCS_COMPACT_ID;
+extern const int DILITHIUM_ED25519_SPHINCS_FULL_ID;
+
 #endif

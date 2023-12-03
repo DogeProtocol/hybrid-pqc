@@ -30,3 +30,7 @@ const int CRYPTO_FALCON_MAX_SIGNATURE_BYTES = 690 + 40 + 2; //Signature + Nonce 
 
 const int NONCE_BYTES = 40;
 const int HASH_LENGTH = 64;
+
+
+const int DILITHIUM_ED25519_SPHINCS_COMPACT_ID = 1;
+const int DILITHIUM_ED25519_SPHINCS_FULL_ID = 2;
