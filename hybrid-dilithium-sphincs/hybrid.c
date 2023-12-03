@@ -264,7 +264,7 @@ int crypto_sign_dilithium_ed25519_sphincs(unsigned char* sm, unsigned long long*
 
 	//Set totalLen of sig, excluding LEN_BYTES
 	unsigned long long msgLen = mlen;
-	sm[0] = (unsigned char)(msgLen >> 8);
+	sm[0] = (unsigned char)DILITHIUM_ED25519_SPHINCS_FULL_ID;
 	sm[1] = (unsigned char)msgLen;
 
 	//Copy ed25519 signature (which includes the message), to output	
@@ -296,13 +296,18 @@ int crypto_sign_dilithium_ed25519_sphincs_open(unsigned char* m, unsigned long l
 		return -1;
 	}
 
-	int msgLen = ((size_t)sm[0] << 8) | (size_t)sm[1];
-	if (msgLen <= 0 || msgLen > MAX_MSG_LEN) {
+	int id = (size_t)sm[0];
+	if (id != DILITHIUM_ED25519_SPHINCS_FULL_ID) {
 		return -2;
 	}
 
-	if (smlen != LEN_BYTES + CRYPTO_ED25519_SIGNATURE_BYTES + msgLen + CRYPTO_DILITHIUM_SIGNATURE_BYTES + CRYPTO_SPHINCS_SIGNATURE_BYTES) {
+	int msgLen = (size_t)sm[1];
+	if (msgLen <= 0 || msgLen > MAX_MSG_LEN) {
 		return -3;
+	}
+
+	if (smlen != LEN_BYTES + CRYPTO_ED25519_SIGNATURE_BYTES + msgLen + CRYPTO_DILITHIUM_SIGNATURE_BYTES + CRYPTO_SPHINCS_SIGNATURE_BYTES) {
+		return -4;
 	}
 
 	int sig1Len = CRYPTO_ED25519_SIGNATURE_BYTES + msgLen;
@@ -328,11 +333,11 @@ int crypto_sign_dilithium_ed25519_sphincs_open(unsigned char* m, unsigned long l
 
 	int r1 = crypto_sign_ed25519_open(msgFromSignature1, &msgFromSignatureLen1, sig1, sig1Len, pk1);
 	if (r1 != 0) {
-		return -4;
+		return -5;
 	}
 
 	if ((int) msgFromSignatureLen1 != msgLen) {
-		return -5;
+		return -6;
 	}
 	
 	//Copy actual Sig2 from source
@@ -348,7 +353,7 @@ int crypto_sign_dilithium_ed25519_sphincs_open(unsigned char* m, unsigned long l
 
 	int r2 = PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_verify(sig2, CRYPTO_DILITHIUM_SIGNATURE_BYTES, msgFromSignature1, msgLen, pk2);
 	if (r2 != 0) {
-		return -6;
+		return -7;
 	}	
 	
 	//Copy actual Sig3 from source
@@ -363,7 +368,7 @@ int crypto_sign_dilithium_ed25519_sphincs_open(unsigned char* m, unsigned long l
 
 	int r3 = PQCLEAN_SPHINCSSHAKE256FSIMPLE_CLEAN_crypto_sign_verify(sig3, CRYPTO_SPHINCS_SIGNATURE_BYTES, msgFromSignature1, msgLen, pk3);
 	if (r3 != 0) {
-		return -7;
+		return -8;
 	}
 
 	for (int i = 0; i < msgLen; i++) {
@@ -475,7 +480,7 @@ int crypto_sign_compact_dilithium_ed25519_sphincs(unsigned char* sm, unsigned lo
 
 	//Store the original message length
 	unsigned long long msgLen = mlen;
-	sm[0] = (unsigned char)(msgLen >> 8);
+	sm[0] = (unsigned char)DILITHIUM_ED25519_SPHINCS_COMPACT_ID;
 	sm[1] = (unsigned char)msgLen;
 
 	//Copy ed25519 signature to output	
@@ -512,13 +517,18 @@ int crypto_sign_compact_dilithium_ed25519_sphincs_open(unsigned char* m, unsigne
 		return -1;
 	}
 
-	int msgLen = ((size_t)sm[0] << 8) | (size_t)sm[1];
-	if (msgLen <= 0 || msgLen > MAX_MSG_LEN) {
+	int id = (size_t)sm[0];
+	if (id != DILITHIUM_ED25519_SPHINCS_COMPACT_ID) {
 		return -2;
 	}
 
-	if (smlen != LEN_BYTES + CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_DILITHIUM_SIGNATURE_BYTES + NONCE_BYTES + msgLen) {
+	int msgLen = (size_t)sm[1];
+	if (msgLen <= 0 || msgLen > MAX_MSG_LEN) {
 		return -3;
+	}
+
+	if (smlen != LEN_BYTES + CRYPTO_ED25519_SIGNATURE_BYTES + CRYPTO_DILITHIUM_SIGNATURE_BYTES + NONCE_BYTES + msgLen) {
+		return -4;
 	}
 
 	unsigned char msgFromSignature1[64 + 64] = { 0 }; //HASH_LEN + CRYPTO_ED25519_SIGNATURE_BYTES
@@ -562,17 +572,17 @@ int crypto_sign_compact_dilithium_ed25519_sphincs_open(unsigned char* m, unsigne
 
 	int r1 = crypto_sign_ed25519_open(msgFromSignature1, &msgFromSignatureLen1, sig1, CRYPTO_ED25519_SIGNATURE_BYTES + HASH_LENGTH, pk1);
 	if (r1 != 0) {
-		return -4;
+		return -5;
 	}
 
 	if (msgFromSignatureLen1 != HASH_LENGTH) {
-		return -5;
+		return -6;
 	}
 
 	//Verify hybridMessageHash from message
 	for (int i = 0; i < HASH_LENGTH; i++) {
 		if (msgFromSignature1[i] != hybridMessageHash[i]) {
-			return -6;
+			return -7;
 		}
 	}
 
@@ -588,7 +598,7 @@ int crypto_sign_compact_dilithium_ed25519_sphincs_open(unsigned char* m, unsigne
 
 	int r2 = PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_verify(sig2, CRYPTO_DILITHIUM_SIGNATURE_BYTES, hybridMessageHash, HASH_LENGTH, pk2);
 	if (r2 != 0) {
-		return -7;
+		return -8;
 	}
 
 	//Copy the message to the output

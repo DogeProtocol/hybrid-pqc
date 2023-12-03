@@ -220,18 +220,23 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wconversion)
 endif()
 
-set(HYBRIDPQC_HEADERS ${PROJECT_SOURCE_DIR}/falcon512/api.h
-                   ${PROJECT_SOURCE_DIR}/falcon512/fpr.h
-                   ${PROJECT_SOURCE_DIR}/falcon512/inner.h
-                   ${PROJECT_SOURCE_DIR}/tweetnacl/tweetnacl.h
-                   ${PROJECT_SOURCE_DIR}/hybrid/hybrid.h
-                   ${PROJECT_SOURCE_DIR}/random/randombytes.h)
-
-install(FILES ${HYBRIDPQC_HEADERS}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hybridpqc)
-
+# HYBRIDPQC HEADRES falcon-512
+set(HYBRIDPQC_HEADERS_FALCON_512 ${PROJECT_SOURCE_DIR}/falcon512/api.h)
+install(FILES ${HYBRIDPQC_HEADERS_FALCON_512} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hybridpqc)
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/hybridpqc)
-execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS} ${PROJECT_BINARY_DIR}/include/hybridpqc)
+execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS_FALCON_512} ${PROJECT_BINARY_DIR}/include/hybridpqc/falcon512.h)
+
+# HYBRIDPQC HEADRES hybrid-falcon
+set(HYBRIDPQC_HEADERS_HYBRID_FALCON_512 ${PROJECT_SOURCE_DIR}/hybrid-falcon/hybrid.h)
+install(FILES ${HYBRIDPQC_HEADERS_HYBRID_FALCON_512} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hybridpqc)
+execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS_HYBRID_FALCON_512} ${PROJECT_BINARY_DIR}/include/hybridpqc/hybridfalcon512.h)
+
+
+# HYBRIDPQC HEADRES hybrid-dilithium-sphincs
+set(HYBRIDPQC_HEADERS_HYBRID_EDS ${PROJECT_SOURCE_DIR}/hybrid-dilithium-sphincs/hybrid.h)
+install(FILES ${HYBRIDPQC_HEADERS_HYBRID_EDS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hybridpqc)
+execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS_HYBRID_EDS} ${PROJECT_BINARY_DIR}/include/hybridpqc/hybrideds.h)
+
 
 # enable testing functionality
 enable_testing()
