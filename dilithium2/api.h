@@ -10,43 +10,41 @@
 #define PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_ALGNAME "Dilithium2"
 
 #if defined(_WIN32)
-#define HYBRIDPQC_API __declspec(dllexport)
+#define HYBRID_API __declspec(dllexport)
 #else
-#define HYBRIDPQC_API __attribute__((visibility("default")))
+#define HYBRID_API __attribute__((visibility("default")))
 #endif
 
-#if defined(HYBRIDPQC_SYS_UEFI)
-#undef HYBRIDPQC_API
-#define HYBRIDPQC_API
+#if defined(HYBRID_SYS_UEFI)
+#undef HYBRID_API
+#define HYBRID_API
 #endif
-
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-HYBRIDPQC_API int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_keypair_seed(uint8_t* pk, uint8_t* sk, const uint8_t* seed); //seed needs to be 32 chars long
+    HYBRID_API int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_keypair_seed(uint8_t* pk, uint8_t* sk, const uint8_t* seed); //seed needs to be 32 chars long
 
-HYBRIDPQC_API int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk);
+    HYBRID_API int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk);
 
-HYBRIDPQC_API int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_signature(uint8_t *sig, size_t *siglen,
+    HYBRID_API int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_signature(uint8_t *sig, size_t *siglen,
         const uint8_t *m, size_t mlen,
         const uint8_t *sk);
 
-HYBRIDPQC_API int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign(uint8_t *sm, size_t *smlen,
+    HYBRID_API int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign(uint8_t *sm, size_t *smlen,
         const uint8_t *m, size_t mlen,
         const uint8_t *sk);
 
-HYBRIDPQC_API int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_verify(const uint8_t *sig, size_t siglen,
+    HYBRID_API int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_verify(const uint8_t *sig, size_t siglen,
         const uint8_t *m, size_t mlen,
         const uint8_t *pk);
 
-HYBRIDPQC_API int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_open(uint8_t *m, size_t *mlen,
+    HYBRID_API int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_open(uint8_t *m, size_t *mlen,
         const uint8_t *sm, size_t smlen,
         const uint8_t *pk);
 
 #endif
-
 
 #if defined(__cplusplus)
 } // extern "C"

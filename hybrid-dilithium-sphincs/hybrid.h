@@ -5,7 +5,7 @@
 #define HYBRID_API __attribute__((visibility("default")))
 #endif
 
-#if defined(OQS_SYS_UEFI)
+#if defined(HYBRID_SYS_UEFI)
 #undef HYBRID_API
 #define HYBRID_API
 #endif
@@ -41,6 +41,10 @@ HYBRID_API int crypto_sign_compact_dilithium_ed25519_sphincs_open(unsigned char*
 	const unsigned char* pk);
 
 HYBRID_API int crypto_verify_compact_dilithium_ed25519_sphincs(const unsigned char* m, unsigned long long mlen,
+	const unsigned char* sm, unsigned long long smlen,
+	const unsigned char* pk);
+
+HYBRID_API int crypto_verify_dilithium(const unsigned char* m, unsigned long long mlen,
 	const unsigned char* sm, unsigned long long smlen,
 	const unsigned char* pk);
 

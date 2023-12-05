@@ -92,25 +92,24 @@ random nonce  | original message | sphincs public key
 
 hybrid-message-hash = SHA3-512(compact-mode-message)
 
-Hybrid Signature Length (compact mode) = 2 + 64 + {1 to 64} + 2420 + 64 + 40
+Hybrid Signature Length (compact mode) = 1 + 1 + 64 + {1 to 64} + 2420 + 64 + 40
 =======================================================================================================================
 Layout of signature:
 
-2 bytes           | 64 bytes          | 2420 bytres         | 40 bytes     | {1 to 64 bytes}
-length of message | ed25519 signature | dilithium signature | random nonce | original message
+1 byte                  | 1 byte            | 64 bytes          | 2420 bytres         | 40 bytes     | {1 to 64 bytes}
+signature id (always 1) | length of message | ed25519 signature | dilithium signature | random nonce | original message
 
 Full Signature
 ==================
 ==================
 
-Hybrid Signature Length (full, used during breakglass) = 2 + 64 + {1 to 64} + 2420 + 49856
+Hybrid Signature Length (full, used during breakglass) = 1 + 1 + 64 + {1 to 64} + 2420 + 49856
 =======================================================================================================================
 Layout of signature:
 
-2 bytes           | 64 bytes          | {1 to 64 bytes}   | 2420 bytes          | 49856
-length of message | ed25519 signature | original message  | dilithium signature | sphincs signature
+1 byte                  | 1 byte            | 64 bytes          | {1 to 64 bytes}   | 2420 bytes          | 49856
+signature id (always 1) | length of message | ed25519 signature | original message  | dilithium signature | sphincs signature
 
-The first 2 bytes contain message length
 Message is variable length, between 1 to 64 bytes
 */
 
@@ -262,10 +261,9 @@ int crypto_sign_dilithium_ed25519_sphincs(unsigned char* sm, unsigned long long*
 		return -6;
 	}
 
-	//Set totalLen of sig, excluding LEN_BYTES
-	unsigned long long msgLen = mlen;
+	//Set signature id and message length
 	sm[0] = (unsigned char)DILITHIUM_ED25519_SPHINCS_FULL_ID;
-	sm[1] = (unsigned char)msgLen;
+	sm[1] = (unsigned char)mlen;
 
 	//Copy ed25519 signature (which includes the message), to output	
 	for (int i = 0;i < (int)sigLen1;i++) {
@@ -478,10 +476,9 @@ int crypto_sign_compact_dilithium_ed25519_sphincs(unsigned char* sm, unsigned lo
 		return -5;
 	}
 
-	//Store the original message length
-	unsigned long long msgLen = mlen;
+	//Set signature id and message length
 	sm[0] = (unsigned char)DILITHIUM_ED25519_SPHINCS_COMPACT_ID;
-	sm[1] = (unsigned char)msgLen;
+	sm[1] = (unsigned char)mlen;
 
 	//Copy ed25519 signature to output	
 	for (int i = 0; i < CRYPTO_ED25519_SIGNATURE_BYTES; i++) {
@@ -640,3 +637,17 @@ int crypto_verify_compact_dilithium_ed25519_sphincs(const unsigned char* m, unsi
 	return 0;
 }
 
+int crypto_verify_dilithium(const unsigned char* m, unsigned long long mlen,
+	const unsigned char* sm, unsigned long long smlen,
+	const unsigned char* pk) {
+	if (m == NULL || mlen <= 0 || mlen > MAX_MSG_LEN || sm == NULL || pk == NULL) {
+		return -1;
+	}
+
+	int r = PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_verify(sm, smlen, m, mlen, pk);
+	if (r != 0) {
+		return -2;
+	}
+
+	return 0;
+}
