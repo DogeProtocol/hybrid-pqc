@@ -74,7 +74,7 @@ jobs:
         path: |
               ${{ github.workspace }}/build/lib/*.*
               ${{ github.workspace }}/build/bin/Release/*.*
-              ${{ github.workspace }}/build/include/*.*
+              ${{ github.workspace }}/build/include/**/*
               
     - name: release
       uses: ncipollo/release-action@v1
