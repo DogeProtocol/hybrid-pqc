@@ -80,5 +80,5 @@ jobs:
       uses: ncipollo/release-action@v1
       with:
         allowUpdates: true
-        artifacts: "build/lib/*.*, build/bin/Release/*.*"
+        artifacts: "build/lib/*.*, build/bin/Release/*.*,build/include/**/*"
 
