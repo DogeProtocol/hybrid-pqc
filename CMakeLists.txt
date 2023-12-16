@@ -249,6 +249,12 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS_COMMON} ${P
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS_SPHINCS} ${PROJECT_BINARY_DIR}/include/sphincs)
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS_DILITHIUM} ${PROJECT_BINARY_DIR}/include/dilithium)
 
+file(ARCHIVE_CREATE
+    OUTPUT "${PROJECT_BINARY_DIR}/includes.zip"
+    PATHS 
+         ${PROJECT_BINARY_DIR}/include/**/*"
+    FORMAT "zip")
+    
 # enable testing functionality
 enable_testing()
 
