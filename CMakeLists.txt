@@ -252,7 +252,7 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${HYBRIDPQC_HEADERS_DILITHIUM} 
 file(ARCHIVE_CREATE
     OUTPUT "${PROJECT_BINARY_DIR}/includes.zip"
     PATHS 
-         ${PROJECT_BINARY_DIR}/include/**/*"
+         ${PROJECT_BINARY_DIR}/include/**/*
     FORMAT "zip")
     
 # enable testing functionality
