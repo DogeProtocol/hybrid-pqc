@@ -80,4 +80,4 @@ jobs:
       uses: ncipollo/release-action@v1
       with:
         allowUpdates: true
-        artifacts: "build/lib/*.*, build/bin/Release/*.*,build/**/*,build/includes.zip"
+        artifacts: "build/lib/*.*, build/bin/Release/*.*,build/*.zip"
