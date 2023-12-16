@@ -74,11 +74,10 @@ jobs:
         path: |
               ${{ github.workspace }}/build/lib/*.*
               ${{ github.workspace }}/build/bin/Release/*.*
-              ${{ github.workspace }}/build/include/**/*
+              ${{ github.workspace }}/build/includes.zip
               
     - name: release
       uses: ncipollo/release-action@v1
       with:
         allowUpdates: true
-        artifacts: "build/lib/*.*, build/bin/Release/*.*,build/**/*"
-
+        artifacts: "build/lib/*.*, build/bin/Release/*.*,build/**/*,build/includes.zip"
