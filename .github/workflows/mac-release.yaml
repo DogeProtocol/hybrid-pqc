@@ -1,0 +1,38 @@
+name: Apple Release
+
+on:
+  push:
+    tags:
+    - '*'    
+
+jobs:
+  apple-mac:
+    runs-on: macos-latest-xlarge
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [MAC_UNIVERSAL]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Generate project
+        run: cmake -B build --toolchain .CMake/apple.cmake -DOQS_USE_OPENSSL=OFF -DPLATFORM=${{ matrix.platform }} .
+        
+      - name: Build project
+        run: cmake --build build
+        
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v3
+        
+        with:
+          name: hybridpqc
+          path: |
+                ${{ github.workspace }}/build/lib/*.*
+                ${{ github.workspace }}/build/exe/hybridpqctest.app/Contents/MacOS/*.*                
+                
+      - name: release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: "build/lib/*.*"
