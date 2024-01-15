@@ -7,11 +7,11 @@ on:
 
 jobs:
   apple-mac:
-    runs-on: macos-latest-xlarge
+    runs-on: macos-latest
     strategy:
       fail-fast: true
       matrix:
-        platform: [MAC_UNIVERSAL]
+        platform: [MAC]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
