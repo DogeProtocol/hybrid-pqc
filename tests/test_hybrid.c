@@ -11,6 +11,7 @@
 #include "../hybrid-dilithium-sphincs/hybrid.h"
 #include "../sphincs/api.h"
 #include "../common/fips202.h"
+#include "../dilithium2/api.h"
 
 clock_t get_nano_sec(void);
 void print_elapsed(clock_t startTime, clock_t endTime);
