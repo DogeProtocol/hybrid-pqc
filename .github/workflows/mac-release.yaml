@@ -7,9 +7,9 @@ on:
 
 jobs:
   apple-mac:
-    runs-on: macos-latest-xlarge
+    runs-on: macos-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         platform: [MAC_UNIVERSAL]
     steps:
