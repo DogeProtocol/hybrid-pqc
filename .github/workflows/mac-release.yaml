@@ -1,4 +1,4 @@
-name: Apple Release
+name: Mac Release x86_x64
 
 on:
   push:
