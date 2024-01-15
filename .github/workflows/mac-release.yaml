@@ -29,7 +29,6 @@ jobs:
           name: hybridpqc
           path: |
                 ${{ github.workspace }}/build/lib/*.*
-                ${{ github.workspace }}/build/exe/hybridpqctest.app/Contents/MacOS/*.*                
                 
       - name: release
         uses: ncipollo/release-action@v1
