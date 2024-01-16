@@ -37,6 +37,17 @@ static void test_functional(void) {
 	assert(ret1 == 0);
 	assert(ret2 == 0);
 	assert(memcmp(buf1, buf2, sizeof(buf1)) != 0);
+       
+      uint8_t buf3[256] = {0};
+      for(int i = 0;i < 20;i++) {
+       buf3[buf1[i]] = buf3[buf1[i]] + 1;
+      }
+      for(int i = 0;i < 256;i++) {
+       if(buf3[i] > 0) {
+         printf("\nbyte %d=%d", i, buf3[i]);
+         assert(buf3[i] < 3);
+       }
+      }
 }
 
 static void test_empty(void) {
