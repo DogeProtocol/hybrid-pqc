@@ -21,11 +21,11 @@ jobs:
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3        
         with:
-          name: hybridpqc
+          name: hybridpqc-release-android
           path: |
                 ${{ github.workspace }}/build/*.*                
       - name: release
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
-          artifacts: "build/*.*"
+          artifacts: "build/*.gz
