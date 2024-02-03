@@ -1,4 +1,4 @@
-name: android build
+name: android library build
 
 on:
   push:
@@ -19,15 +19,13 @@ jobs:
       - name: Build project
         run: ./scripts/build-android.sh $ANDROID_NDK_HOME -a ${{ matrix.abi }}
       - name: 'Upload Artifact'
-        uses: actions/upload-artifact@v3
-        
+        uses: actions/upload-artifact@v3        
         with:
           name: hybridpqc
           path: |
-                ${{ github.workspace }}/build/lib/*.*
-                
+                ${{ github.workspace }}/build/*.*                
       - name: release
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
-          artifacts: "build/lib/*.*"
+          artifacts: "build/*.*"
