@@ -12,8 +12,17 @@
 # If OQS_OPT_TARGET=generic we target a generic CPU.
 # Otherwise we target the specified CPU.
 
+# Pedantic checks (-Wall, ...) are not enabled by default for Release
+# builds such as to avoid future build errors introduced by currently
+# unknown compiler warnings
+
 include(CheckCCompilerFlag)
 check_c_compiler_flag("-Wa,--noexecstack" CC_SUPPORTS_WA_NOEXECSTACK)
+
+# This sets the equivalent of -Werror for supported compilers
+# it can be overriden with --compile-no-warnings-as-errors
+# https://cmake.org/cmake/help/latest/prop_tgt/COMPILE_WARNING_AS_ERROR.html
+set(CMAKE_COMPILE_WARNING_AS_ERROR ${OQS_STRICT_WARNINGS})
 
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18")
     include(CheckLinkerFlag)
@@ -82,10 +91,12 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
 endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+  if(${OQS_STRICT_WARNINGS})
     add_compile_options(-Wall)
     add_compile_options(-Wextra)
     add_compile_options(-Wpedantic)
     add_compile_options(-Wno-unused-command-line-argument)
+  endif()
     if(CC_SUPPORTS_WA_NOEXECSTACK)
         add_compile_options("-Wa,--noexecstack")
     endif()
@@ -95,8 +106,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
 
     if(NOT ${OQS_BUILD_ONLY_LIB})
         set(THREADS_PREFER_PTHREAD_FLAG ON)
-        find_package(Threads REQUIRED)
-        set(OQS_USE_PTHREADS_IN_TESTS 1)
+        find_package(Threads)
     endif()
 
     if(${OQS_DEBUG_BUILD})
@@ -133,6 +143,10 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     endif()
 
 elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+  if (NOT ${CMAKE_C_COMPILER_VERSION} VERSION_GREATER_EQUAL ${OQS_MINIMAL_GCC_VERSION})
+     message(FATAL_ERROR "GCC version ${CMAKE_C_COMPILER_VERSION} below minimally required version ${OQS_MINIMAL_GCC_VERSION}.")
+  endif()
+  if(${OQS_STRICT_WARNINGS})
     add_compile_options(-Wall)
     add_compile_options(-Wextra)
     add_compile_options(-Wpedantic)
@@ -141,6 +155,7 @@ elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-Wformat=2)
     add_compile_options(-Wfloat-equal)
     add_compile_options(-Wwrite-strings)
+  endif()
     if (NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         if(CC_SUPPORTS_WA_NOEXECSTACK)
             add_compile_options("-Wa,--noexecstack")
@@ -152,8 +167,7 @@ elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
     if(NOT ${OQS_BUILD_ONLY_LIB})
         set(THREADS_PREFER_PTHREAD_FLAG ON)
-        find_package(Threads REQUIRED)
-        set(OQS_USE_PTHREADS_IN_TESTS 1)
+        find_package(Threads)
     endif()
 
     if(${OQS_DEBUG_BUILD})
