@@ -16,17 +16,3 @@ jobs:
         uses: actions/checkout@v3
       - name: Build project
         run: ./android/build-android.sh $ANDROID_NDK_HOME -a ${{ matrix.abi }}
-
-      - name: 'Upload Artifact'
-        uses: actions/upload-artifact@v3
-        
-        with:
-          name: hybridpqc
-          path: |
-                ${{ github.workspace }}/build/lib/*.*
-                
-      - name: release
-        uses: ncipollo/release-action@v1
-        with:
-          allowUpdates: true
-          artifacts: "build/lib/*.*"
