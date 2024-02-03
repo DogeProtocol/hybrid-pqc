@@ -83,7 +83,7 @@ else
 fi
 
 # Check SDK version is supported
-highestSdkVersion=33
+highestSdkVersion=29
 if (( 1 <= MINSDKVERSION && MINSDKVERSION <= highestSdkVersion ))
 then
     echo "Compiling for SDK $MINSDKVERSION"
