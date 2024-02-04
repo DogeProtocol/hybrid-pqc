@@ -3,9 +3,7 @@
 name: Multi Platform Release
 
 on:
-  push:
-    tags:
-    - '*'    
+   workflow_dispatch:
 
 jobs:
   build:
