@@ -1,9 +1,7 @@
 name: android library build
 
 on:
-  push:
-    tags:
-    - '*' 
+   workflow_dispatch:
 
 jobs:
 
