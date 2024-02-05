@@ -1,4 +1,4 @@
-name: android library build
+name: Android library build
 
 on:
    workflow_dispatch:
