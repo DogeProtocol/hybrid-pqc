@@ -21,17 +21,16 @@ jobs:
         run:  ls  ${{ github.workspace }}/${{ matrix.abi }}/lib
       - name: Create Release
         run: |
-         cd ${{ github.workspace }}/${{ matrix.abi }}/lib && tar -czf ${{ github.workspace }}/${{ matrix.abi }}/${{ matrix.abi }}.gz .
-         sha256sum ${{ github.workspace }}/${{ matrix.abi }}/${{ matrix.abi }}.gz >${{ github.workspace }}/${{ matrix.abi }}/${{ matrix.abi }}.txt
+         cd ${{ github.workspace }}/${{ matrix.abi }}/lib && tar -czf ${{ github.workspace }}/${{ matrix.abi }}/'android_'+${{ matrix.abi }}.gz .
+         sha256sum ${{ github.workspace }}/${{ matrix.abi }}/'android_'+${{ matrix.abi }}.gz >${{ github.workspace }}/${{ matrix.abi }}/'android_'+${{ matrix.abi }}.txt
       - name: Check Release Files
         run: |
-          ls  ${{ github.workspace }}/${{ matrix.abi }}
-          ls  ${{ github.workspace }}/${{ matrix.abi }}//${{ matrix.abi }}*.*
+          ls  ${{ github.workspace }}/${{ matrix.abi }}//'android_'+${{ matrix.abi }}*.*
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3        
         with:
           name: hybridpqc-android-library-release
-          path: ${{ github.workspace }}/${{ matrix.abi }}/${{ matrix.abi }}*.*
+          path: ${{ github.workspace }}/${{ matrix.abi }}/'android_'+${{ matrix.abi }}*.*
   Release:
     name: Release APK
     runs-on: ubuntu-latest
