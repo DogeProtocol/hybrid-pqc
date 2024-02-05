@@ -1,7 +1,7 @@
 name: Android library build
 
 env:
-  filename_prefix: android
+  filename-prefix: android
   
 on:
   workflow_dispatch: 
