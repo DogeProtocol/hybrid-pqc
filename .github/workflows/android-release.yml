@@ -1,8 +1,9 @@
 name: Android library build
  
 on:
-  workflow_dispatch: 
-
+  push:
+    tags:
+    - '*'  
 jobs:
   AndroidLibrary:
     runs-on: ubuntu-latest
