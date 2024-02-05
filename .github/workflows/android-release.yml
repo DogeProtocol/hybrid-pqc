@@ -21,4 +21,4 @@ jobs:
         with:
           name: hybridpqc
           path: |
-                ${{ github.workspace }}/${{ matrix.abi }}/build/lib/*.*
+                ${{ github.workspace }}/build/*.*
