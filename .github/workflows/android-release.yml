@@ -17,12 +17,10 @@ jobs:
       - name: Build project
         run: ./scripts/build-android.sh $ANDROID_NDK_HOME -a ${{ matrix.abi }} -b ${{ matrix.abi }}
       - name: Check Files
-        run:  ls  ${{ github.workspace }}
-      - name: Check Files
-        run:  ls  ${{ github.workspace }}/${{ matrix.abi }}        
+        run:  ls  ${{ github.workspace }}/${{ matrix.abi }}/lib        
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3        
         with:
           name: hybridpqc
           path: |
-                ${{ github.workspace }}/${{ matrix.abi }}/*.*
+                ${{ github.workspace }}/${{ matrix.abi }}/lib/*.*
