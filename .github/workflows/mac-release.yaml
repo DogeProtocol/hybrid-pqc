@@ -1,7 +1,9 @@
 name: Mac Release x86_x64
 
 on:
-   workflow_dispatch:  
+  push:
+    tags:
+    - '*'  
 
 jobs:
   apple-mac:
