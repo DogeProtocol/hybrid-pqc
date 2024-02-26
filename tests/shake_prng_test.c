@@ -2,6 +2,7 @@
 #include "../random/randombytes.h"
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 int prngtest();
 
