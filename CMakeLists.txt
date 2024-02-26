@@ -127,15 +127,15 @@ if(DEFINED SANITIZER_LD_FLAGS)
     target_link_libraries(hybridpqc PUBLIC ${SANITIZER_LD_FLAGS})
 endif()
 
-
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-set(SOURCE_FILES dilithium2/ntt.c dilithium2/ntt.h dilithium2/packing.c dilithium2/packing.h dilithium2/params.h dilithium2/poly.c dilithium2/poly.h dilithium2/polyvec.c dilithium2/polyvec.h dilithium2/reduce.c dilithium2/reduce.h dilithium2/rounding.c dilithium2/rounding.h dilithium2/sign.c dilithium2/sign.h dilithium2/symmetric.h dilithium2/symmetric-shake.c sphincs/address.c sphincs/context_shake.c sphincs/fors.c sphincs/hash_shake.c sphincs/merkle.c sphincs/sign.c sphincs/thash_shake_simple.c sphincs/utils.c sphincs/utilsx1.c sphincs/wots.c sphincs/wotsx1.c  random/randombytes.c common/fips202.c "common/hybrid-common.c" "tweetnacl/tweetnacl.c" "hybrid-dilithium-sphincs/hybrid.h" "hybrid-dilithium-sphincs/hybrid.c")
+set(SOURCE_FILES dilithium2/ntt.c dilithium2/ntt.h dilithium2/packing.c dilithium2/packing.h dilithium2/params.h dilithium2/poly.c dilithium2/poly.h dilithium2/polyvec.c dilithium2/polyvec.h dilithium2/reduce.c dilithium2/reduce.h dilithium2/rounding.c dilithium2/rounding.h dilithium2/sign.c dilithium2/sign.h dilithium2/symmetric.h dilithium2/symmetric-shake.c sphincs/address.c sphincs/context_shake.c sphincs/fors.c sphincs/hash_shake.c sphincs/merkle.c sphincs/sign.c sphincs/thash_shake_simple.c sphincs/utils.c sphincs/utilsx1.c sphincs/wots.c sphincs/wotsx1.c  random/randombytes.c common/fips202.c "common/hybrid-common.c" "common/shake_prng.c" "tweetnacl/tweetnacl.c" "hybrid-dilithium-sphincs/hybrid.h" "hybrid-dilithium-sphincs/hybrid.c")
 add_library(hybridpqc SHARED ${SOURCE_FILES})
 add_executable(hybridpqctest ${SOURCE_FILES} "tests/test_hybrid.c")
 add_executable(randombytestest "random/randombytes.h" "random/randombytes.c" "random/randombytes_test.c")
- 
+add_executable(prngtest ${SOURCE_FILES} "random/randombytes.h" "random/randombytes.c" "tests/shake_prng_test.c")
+
 set_target_properties(hybridpqc
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
@@ -162,6 +162,16 @@ set_target_properties(randombytestest
     SOVERSION 2
     # For Windows DLLs
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/exe")
+
+set_target_properties(prngtest
+    PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    VERSION ${HYBRIDPQC_VERSION_TEXT}
+    SOVERSION 2
+    # For Windows DLLs
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/exe")
+
 
 configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
   "${CMAKE_CURRENT_BINARY_DIR}/hybridpqcConfig.cmake"
@@ -222,6 +232,7 @@ endif()
 set(HYBRIDPQC_HEADERS_COMMON
                    ${PROJECT_SOURCE_DIR}/tweetnacl/tweetnacl.h
                    ${PROJECT_SOURCE_DIR}/random/randombytes.h
+                   ${PROJECT_SOURCE_DIR}/common/shake_prng.h
     )
 
 set(HYBRIDPQC_HEADERS_SPHINCS ${PROJECT_SOURCE_DIR}/sphincs/api.h)
@@ -258,5 +269,7 @@ file(ARCHIVE_CREATE
 # enable testing functionality
 enable_testing()
 
+add_test(NAME prngtest COMMAND  $<TARGET_FILE:prngtest>)
 add_test(NAME randombytestest COMMAND  $<TARGET_FILE:randombytestest>)
 add_test(NAME hybridpqctest COMMAND  $<TARGET_FILE:hybridpqctest>)
+
