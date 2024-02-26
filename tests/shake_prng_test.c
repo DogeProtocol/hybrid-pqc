@@ -19,9 +19,7 @@ int prngtest() {
 	if (ret != 0) {
 		return -2;
 	}
-	if (memcmp(expandedSeed, zero, sizeof(zero)) == 0) {
-		return -3;
-	}
+	assert(memcmp(expandedSeed, zero, sizeof(zero)) != 0);
 
 	uint8_t byteMap[256] = { 0 };
 	for (int i = 0; i < 96; i++) {
