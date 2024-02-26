@@ -5,8 +5,7 @@ name: Multi Platform Release
 on:
   push:
     tags:
-    - '*'    
-
+    - '*'  
 jobs:
   build:
     runs-on: ${{ matrix.os }}

@@ -1,0 +1,54 @@
+name: Android library build
+ 
+on:
+  push:
+    tags:
+    - '*'  
+jobs:
+  AndroidLibrary:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [armeabi-v7a, arm64-v8a, x86, x86_64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Build project
+        run: ./scripts/build-android.sh $ANDROID_NDK_HOME -a ${{ matrix.abi }} -b ${{ matrix.abi }}
+      - name: Check Files
+        run:  ls  ${{ github.workspace }}/${{ matrix.abi }}/lib
+      - name: Create Release
+        run: |
+         cd ${{ github.workspace }}/${{ matrix.abi }}/lib && tar -czf ${{ github.workspace }}/${{ matrix.abi }}/android-${{ matrix.abi }}.gz .
+         sha256sum ${{ github.workspace }}/${{ matrix.abi }}/android-${{ matrix.abi }}.gz >${{ github.workspace }}/${{ matrix.abi }}/android-${{ matrix.abi }}.txt
+      - name: Check Release Files
+        run: |
+          ls  ${{ github.workspace }}/${{ matrix.abi }}/android-${{ matrix.abi }}*.*
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v3        
+        with:
+          name: hybridpqc-android-library-release
+          path: ${{ github.workspace }}/${{ matrix.abi }}/android-${{ matrix.abi }}*.*
+  Release:
+    name: Release APK
+    runs-on: ubuntu-latest
+    needs: AndroidLibrary
+    if: success() && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Generate version string
+        id: version-string
+        run: echo "::set-output name=VERSION_STR::${GITHUB_REF##*/}"
+ 
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+ 
+      - name: Create a Release APK
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: "hybridpqc-android-library-release/*.*"
+          name: Release ${{ steps.version-string.outputs.VERSION_STR }}
+          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') }}
+          tag: ${{ steps.version-string.outputs.VERSION_STR }}
+          token: ${{ secrets.GITHUB_TOKEN }}

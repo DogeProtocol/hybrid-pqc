@@ -3,7 +3,7 @@ name: Mac Release x86_x64
 on:
   push:
     tags:
-    - '*'    
+    - '*'  
 
 jobs:
   apple-mac:
