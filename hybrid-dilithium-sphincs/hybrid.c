@@ -39,6 +39,7 @@ THE SOFTWARE.
 #include "hybrid.h"
 #include "../common/hybrid-common.h"
 #include "../common/fips202.h"
+#include "../common/shake_prng.h"
 #include "../dilithium2/api.h"
 #include "../sphincs/api.h"
 #include "../tweetnacl/tweetnacl.h"
@@ -112,6 +113,63 @@ signature id (always 1) | length of message | ed25519 signature | original messa
 
 Message is variable length, between 1 to 64 bytes
 */
+
+/**
+ * @file hybrid.c
+ * @brief Implementation of dilithium_ed25519_sphincs signature algorithm
+ */
+
+ /**
+  * @brief Implementation of seed expander that expands a seed specific to dilithium_ed25519_sphincs for purpose of key generation.
+  * Use this function only for specific cases like blockchain seed mnemonics where less number of seed bytes are required for human readability and mangeability.
+  * All other cases should directly generate all the 160 bytes at random using a CSPRNG.
+  * The input seed should be created from a CSPRNG.
+  * 64 bytes of the input seed is first expanded to 128 bytes (32 bytes for ed25519 and 96 bytes for SPHINCS+)
+  * The remaining 32 bytes of the input is copied as-is in the expanded seed.
+  * An alternative scheme is we just take 64 bytes input seed and return 160 bytes output expanded seed, instead of this complicated scheme.
+  * The rationale for doing complicated expansion instead is that;
+  * Some of the expanded seed bytes are copied as is to the SPHINCS+ public key when this expanded seed is subsequently used for generating the keypair (as part of SPHINCS+ internal implementation).
+  * While it shouldn’t matter if we expose some parts of the csprng output (it is computationally infeasible to recover the remaining unexposed part), 
+  * as a long term hedge for using this XOF, we choose to have atleast one part of the hybrid signature scheme use the original seed material directly, than from the XOF.
+  * On why ed25519 and SPHINCS+ specifically instead of a different combination from the 3 schemes;  during the normal course of signing using the compact scheme, the SPHINCS+ key isn't used at all. 
+  * To maintain quantum resistance in case there is an issue with this XOF, Dilithium is used (instead of Dilithium + SPHINCS+), so that we have atleast one quantum resistance scheme that isn't relying on this expansion XOF.
+  * 
+  * @param[int] input seed generated randomly. should be 96 bytes in length.
+  * @param[out] expanded seed of length 160 bytes.
+  */
+int crypto_sign_dilithium_ed25519_sphincs_keypair_seed_expander(const unsigned char* seed, unsigned char* expandedSeed) {
+	uint8_t seedTemp[64] = { 0 };
+	uint8_t expandedSeedTemp[128] = { 0 };
+
+	//Copy first 64 bytes of input-seed to temp-seed
+	for (int i = 0; i < 64; i++) {
+		seedTemp[i] = seed[i];
+		i++;
+	}
+
+	//Expand seed for ed25519 + SPHINCS+
+	int ret = seedexpander_wrapper(seedTemp, 64, expandedSeedTemp, 128);
+	if (ret != 0) {
+		return ret;
+	}
+
+	//Copy over first 32 bytes of expandedSeed used for ed25519 in the function crypto_sign_dilithium_ed25519_sphincs_keypair_seed
+	for (int i = 0; i < 32; i++) {
+		expandedSeed[i] = expandedSeedTemp[i];
+	}
+
+	//Copy over last 32 bytes of original input seed to be used for Dilithium in the function crypto_sign_dilithium_ed25519_sphincs_keypair_seed
+	for (int i = 0; i < 32; i++) {
+		expandedSeed[32 + i] = seed[64 + i];
+	}
+
+	//Copy last 96 bytes of expanded seed for use for SPHINCS+ in the function crypto_sign_dilithium_ed25519_sphincs_keypair_seed
+	for (int i = 0; i < 96; i++) {
+		expandedSeed[64 + i] = expandedSeedTemp[32 + i];
+	}
+
+	return 0;
+}
 
 int crypto_sign_dilithium_ed25519_sphincs_keypair_seed(unsigned char* pk, unsigned char* sk, unsigned char* seed) {
 	if (pk == NULL || sk == NULL || seed == NULL) {

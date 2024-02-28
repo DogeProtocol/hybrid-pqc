@@ -59,10 +59,10 @@ void seedexpander_release(seedexpander_state *state) {
 
 /**
  * @brief Expands a seed and returns output
- * @param[seed] the initial seed
- * @param[seedlen] the initial seed length. needs to be minimum 32 bytes
- * @param[output] the output for the expanded seed
-*  @param[outlen] the desired output length. 
+ * @param[in] the initial seed
+ * @param[in] the initial seed length. needs to be minimum 32 bytes
+ * @param[out] the output for the expanded seed
+*  @param[in] the desired output length. 
  */
 int seedexpander_wrapper(const uint8_t* seed, size_t seedlen, uint8_t* output, size_t outlen) {
     if (seed == NULL || output == NULL) {

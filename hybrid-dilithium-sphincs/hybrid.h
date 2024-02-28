@@ -16,6 +16,9 @@ extern "C" {
 
 #define CRYPTO_DILITHIUM_HYBRID_ALGNAME          "dilithium-ed25519-sphincs"
 
+
+HYBRID_API int crypto_sign_dilithium_ed25519_sphincs_keypair_seed_expander(const unsigned char* seed, unsigned char* expandedSeed);
+
 HYBRID_API int crypto_sign_dilithium_ed25519_sphincs_keypair_seed(unsigned char* pk, unsigned char* sk, unsigned char* seed); //seed needs to be 64 chars in length (32 + 32 + 96)
 
 HYBRID_API int crypto_sign_dilithium_ed25519_sphincs_keypair(unsigned char* pk, unsigned char* sk);

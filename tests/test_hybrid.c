@@ -7,10 +7,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "../random/randombytes.h"
 #include "../hybrid-dilithium-sphincs/hybrid.h"
 #include "../sphincs/api.h"
 #include "../common/fips202.h"
+#include "../common/shake_prng.h"
 #include "../dilithium2/api.h"
 
 clock_t get_nano_sec(void);
@@ -21,6 +23,7 @@ int test_hybrid_dilithium_sphincs(void);
 int test_hybrid_dilithium_sphincs_deterministic();
 int test_hybrid_compact_dilithium_sphincs(void);
 int test_hybrid_compact_dilithium_sphincs_perf(void);
+int test_hybrid_compact_dilithium_sphincs_seed_expander(void);
 int main(int argc, char* argv[]);
 
 const unsigned long long ED25519_PUBLICKEY_BYTES = 32UL;
@@ -34,6 +37,67 @@ void print_elapsed(clock_t startTime, clock_t endTime) {
 	clock_t elapsed = endTime - startTime;
 	double time_taken = ((double)elapsed) / CLOCKS_PER_SEC; // in seconds
 	printf("\n elapsed = %f seconds", time_taken);
+}
+
+int test_hybrid_compact_dilithium_sphincs_seed_expander() {
+	printf("\n starting test_hybrid_compact_dilithium_sphincs_seed_expander");
+	const uint8_t zero[160] = { 0 };
+
+	uint8_t seed[96] = { 0 };
+	uint8_t expandedSeed[160] = { 0 };
+	int ret = randombytes(seed, sizeof(seed));
+	if (ret != 0) {
+		return -1;
+	}
+
+	ret = crypto_sign_dilithium_ed25519_sphincs_keypair_seed_expander(seed, expandedSeed);
+	if (ret != 0) {
+		return -2;
+	}
+	assert(memcmp(expandedSeed, zero, sizeof(zero)) != 0);
+
+	uint8_t byteMap[256] = { 0 };
+	for (int i = 0; i < 160; i++) {
+		byteMap[expandedSeed[i]] = byteMap[expandedSeed[i]] + 1;
+	}
+	for (int i = 0; i < 256; i++) {
+		if (byteMap[i] > 0) {
+			assert(byteMap[i] <= 6);
+		}
+	}
+	
+	for (int i = 0; i < 32; i++) {
+		assert(seed[64 + i] == expandedSeed[32 + i]);
+	}
+
+	unsigned char pk[1312];
+	unsigned char sk[2560];
+	unsigned char sig[2420 + 32];
+	unsigned char msg1[32];
+	unsigned char msg2[32];
+	unsigned long long sigLen = 0;
+
+	ret = PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_keypair(pk, sk);
+	if (ret != 0) {
+		printf("\n PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_keypair failed %d", (int)ret);
+		return ret;
+	}
+
+	//Deterministic seed expander test
+	uint8_t seedDet[96] = { 172,225,248,155,203,184,25,30,170,234,120,74,108,34,234,163,96,243,133,251,141,191,247,182,13,106,56,164,214,179,143,188,253,182,185,124,21,89,72,245,198,128,37,144,170,127,227,74,207,38,218,180,9,3,70,186,30,164,224,215,225,70,242,170,223,41,220,205,23,89,21,10,35,47,200,207,80,239,219,143,117,90,17,81,123,238,48,187,49,28,23,95,251,233,247,76 };
+	uint8_t expandedSeedDet[160] = { 0 };
+	uint8_t expectedExpandedSeed[160] = { 164,112,179,200,61,89,69,78,1,89,229,44,54,201,107,104,54,62,47,58,160,249,241,178,162,136,246,83,253,89,108,138,223,41,220,205,23,89,21,10,35,47,200,207,80,239,219,143,117,90,17,81,123,238,48,187,49,28,23,95,251,233,247,76,162,119,56,52,120,78,179,99,38,91,246,87,201,159,152,122,94,47,110,203,200,250,99,9,172,241,11,195,231,177,73,250,221,22,173,39,38,112,212,31,61,97,206,203,168,175,253,161,189,135,204,75,56,65,107,240,239,158,180,155,254,171,213,115,94,105,96,63,162,43,34,135,20,255,183,35,18,9,210,230,214,185,23,134,137,205,183,208,118,1,84,200,204,130,143,241 };
+
+	ret = crypto_sign_dilithium_ed25519_sphincs_keypair_seed_expander(seedDet, expandedSeedDet);
+	if (ret != 0) {
+		return -3;
+	}
+	for (int i = 0; i < 160; i++) {
+		assert(expandedSeedDet[i] == expectedExpandedSeed[i]);
+	}
+
+	printf("\n test_hybrid_compact_dilithium_sphincs_seed_expander complete");
+	return 0;
 }
 
 int test_dilithium() {
@@ -896,6 +960,11 @@ int test_hybrid_compact_dilithium_sphincs_perf() {
 
 int main(int argc, char* argv[]) {
 	int result;
+
+	result = test_hybrid_compact_dilithium_sphincs_seed_expander();
+	if (result != 0) {
+		return result;
+	}
 
 	result = test_hybrid_compact_dilithium_sphincs_perf();
 	if (result != 0) {
