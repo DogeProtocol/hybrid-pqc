@@ -4,6 +4,7 @@
 #include <string.h>
 #include "../hybrid-dilithium-sphincs/hybrid.h"
 #include "../random/randombytes.h"
+#include "../common/shake_prng.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +47,18 @@ int dp_sign_verify(unsigned char* m, size_t mlen, const unsigned char *sm, size_
 }
 
 EMSCRIPTEN_KEEPALIVE
+int dp_sign_seedexpander(const unsigned char* seed, unsigned char* expandedSeed) {
+	return crypto_sign_dilithium_ed25519_sphincs_keypair_seed_expander(seed, expandedSeed);
+}
+
+EMSCRIPTEN_KEEPALIVE
 int dp_randombytes(void* buf, size_t n) {
 	return randombytes(buf, n);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int dp_seedexpander_wrapper(const uint8_t* seed, size_t seedlen, uint8_t* output, size_t outlen) {
+	return seedexpander_wrapper(seed, seedlen, output, outlen);
 }
 
 #ifdef __cplusplus
