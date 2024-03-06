@@ -93,7 +93,7 @@ random nonce  | original message | sphincs public key
 
 hybrid-message-hash = SHA3-512(compact-mode-message)
 
-Hybrid Signature Length (compact mode) = 1 + 1 + 64 + {1 to 64} + 2420 + 64 + 40
+Hybrid Signature Length (compact mode) = 1 + 1 + 64 + 2420 + 40 + {1 to 64}
 =======================================================================================================================
 Layout of signature:
 
@@ -129,7 +129,7 @@ Message is variable length, between 1 to 64 bytes
   * An alternative scheme is we just take 64 bytes input seed and return 160 bytes output expanded seed, instead of this complicated scheme.
   * The rationale for doing complicated expansion instead is that;
   * Some of the expanded seed bytes are copied as is to the SPHINCS+ public key when this expanded seed is subsequently used for generating the keypair (as part of SPHINCS+ internal implementation).
-  * While it shouldn’t matter if we expose some parts of the csprng output (it is computationally infeasible to recover the remaining unexposed part), 
+  * While it shouldnâ€™t matter if we expose some parts of the csprng output (it is computationally infeasible to recover the remaining unexposed part), 
   * as a long term hedge for using this XOF, we choose to have atleast one part of the hybrid signature scheme use the original seed material directly, than from the XOF.
   * On why ed25519 and SPHINCS+ specifically instead of a different combination from the 3 schemes;  during the normal course of signing using the compact scheme, the SPHINCS+ key isn't used at all. 
   * To maintain quantum resistance in case there is an issue with this XOF, Dilithium is used (instead of Dilithium + SPHINCS+), so that we have atleast one quantum resistance scheme that isn't relying on this expansion XOF.
