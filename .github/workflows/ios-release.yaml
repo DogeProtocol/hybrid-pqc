@@ -24,7 +24,7 @@ jobs:
         sudo xcode-select -version
         sudo xcodebuild -version  
     - name: Build project
-      run: cmake -G Xcode -B build -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_SWIFT_COMPILER_FORCED=true -DCMAKE_OSX_DEPLOYMENT=13.0
+      run: cmake -G Xcode -B build --toolchain .CMake/apple.cmake -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_SWIFT_COMPILER_FORCED=true -DCMAKE_OSX_DEPLOYMENT=13.0
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v3
       with:
