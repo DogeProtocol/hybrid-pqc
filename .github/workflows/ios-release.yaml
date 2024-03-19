@@ -1,4 +1,4 @@
-name: iOS Release x86_x64
+name: iOS library build
 on:
   workflow_dispatch:
 jobs:
