@@ -1,0 +1,36 @@
+name: iOS Release x86_x64
+on:
+  workflow_dispatch:
+jobs:
+  apple-mac:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        platform: [iOS]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - uses: maxim-lobanov/setup-xcode@v1.2.3
+        with:
+          xcode-version: latest
+      - name: Select xcode 
+           run:|
+              sudo xcode-select -p
+              sudo xcode-select -s /Applications/Xcode_14.2.app/Contents/Developer
+              sudo xcode-select -p
+              sudo xcode-select -version
+              sudo xcodebuild -version  
+      - name: Build project
+        run: cmake -G Xcode -B build -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_SWIFT_COMPILER_FORCED=true -DCMAKE_OSX_DEPLOYMENT=13.0
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v3
+        with:
+          name: hybridpqc
+          path: |
+                ${{ github.workspace }}/build/lib/*.*
+      - name: release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: "build/lib/*.*"
