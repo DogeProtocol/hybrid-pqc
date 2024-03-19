@@ -2,12 +2,14 @@ name: iOS Release x86_x64
 on:
   workflow_dispatch:
 jobs:
-  apple-mac:
-    runs-on: macos-latest
+  build:
+    runs-on: ${{ matrix.os }}
     strategy:
+      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: true
       matrix:
-        platform: [iOS]
+        os: [macos-latest]
+        build_type: [Release]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
