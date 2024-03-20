@@ -1,38 +1,37 @@
-name: iOS library build
+name: Mac Release x86_x64
+
 on:
-  workflow_dispatch:
+  push:
+    tags:
+    - '*'  
+
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  apple-mac:
+    runs-on: macos-latest
     strategy:
-      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: true
       matrix:
-        os: [macos-latest]
-        build_type: [Release]
+        platform: [MAC, OS64, TVOS]
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    - uses: maxim-lobanov/setup-xcode@v1.2.3
-      with:
-        xcode-version: latest
-    - name: Select xcode 
-      run: |
-        sudo xcode-select -p
-        sudo xcode-select -s /Applications/Xcode_14.2.app/Contents/Developer
-        sudo xcode-select -p
-        sudo xcode-select -version
-        sudo xcodebuild -version  
-    - name: Build project
-      run: cmake -G Xcode -B build --toolchain .CMake/apple.cmake -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_SWIFT_COMPILER_FORCED=true -DCMAKE_OSX_DEPLOYMENT=13.0
-    - name: 'Upload Artifact'
-      uses: actions/upload-artifact@v3
-      with:
-        name: hybridpqc
-        path: |
-          ${{ github.workspace }}/build/lib/*.*
-    - name: release
-      uses: ncipollo/release-action@v1
-      with:
-        allowUpdates: true
-        artifacts: "build/lib/*.*"
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Generate project
+        run: cmake -B build --toolchain .CMake/apple.cmake -DOQS_USE_OPENSSL=OFF -DPLATFORM=${{ matrix.platform }} .
+        
+      - name: Build project
+        run: cmake --build build
+        
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v3
+        
+        with:
+          name: hybridpqc
+          path: |
+                ${{ github.workspace }}/build/lib/*.*
+                
+      - name: release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: "build/lib/*.*"
