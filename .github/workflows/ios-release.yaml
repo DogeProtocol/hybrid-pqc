@@ -1,7 +1,6 @@
-name: ios Release x86_x64
+name: iOS library build
 
 on:
-  workflow_dispatch:
   push:
     tags:
     - '*'  
@@ -12,7 +11,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        platform: [MAC, OS64, TVOS]
+        platform: [OS64, TVOS]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
