@@ -48,11 +48,11 @@ jobs:
       run:  ls  ${{ github.workspace }}/build
     - name: Create Release
       run: |
-        cd ${{ github.workspace }}/build/wasm && tar -czf ${{ github.workspace }}/build/hybrid-pqc-node-wasm.tar.gz .
-        sha256sum ${{ github.workspace }}/build/hybrid-pqc-node-wasm.tar.gz >${{ github.workspace }}/build/hybrid-pqc-node-wasm.txt
+        cd ${{ github.workspace }}/build/wasm && tar -czf ${{ github.workspace }}/build/hybrid-pqc-nodejs-wasm.tar.gz .
+        sha256sum ${{ github.workspace }}/build/hybrid-pqc-nodejs-wasm.tar.gz >${{ github.workspace }}/build/hybrid-pqc-nodejs-wasm.txt
     - name: Check Release Files
       run: |
-        ls  ${{ github.workspace }}/build/hybrid-pqc-node-*.*
+        ls  ${{ github.workspace }}/build/hybrid-pqc-nodejs-*.*
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v3
       with:
