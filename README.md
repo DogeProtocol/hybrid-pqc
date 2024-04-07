@@ -1,4 +1,4 @@
-[![CMake on multiple platforms](https://github.com/DogeProtocol/hybrid-pqc/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/DogeProtocol/hybrid-pqc/actions/workflows/cmake-multi-platform.yml)
+[![Build and Test](https://github.com/DogeProtocol/hybrid-pqc/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/DogeProtocol/hybrid-pqc/actions/workflows/build-and-test.yml)
 
 # Hybrid Post Quantum Cryptography
 While lattice based post-quantum cryptography schemes such as SPHINCS+ and Dilithium have been standardized, they haven’t 
