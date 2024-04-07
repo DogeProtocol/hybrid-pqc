@@ -43,16 +43,16 @@ jobs:
         mkdir ${{ github.workspace }}/build/wasm
     - name: Build Webassembly library
       run: |
-        cd ${{ github.workspace }}/emsdk && source ./emsdk_env.sh &&  emcc -s WASM=1 -s BINARYEN_ASYNC_COMPILATION=0 -s SINGLE_FILE=1 -s EXPORTED_FUNCTIONS="['_free', '_malloc']"  -s "EXPORTED_RUNTIME_METHODS=['getValue','writeArrayToMemory']" ${{ github.workspace }}/wasm/hybrid-pqc.c ${{ github.workspace }}/dilithium2/ntt.c ${{ github.workspace }}/dilithium2/packing.c ${{ github.workspace }}/dilithium2/poly.c ${{ github.workspace }}/dilithium2/polyvec.c ${{ github.workspace }}/dilithium2/reduce.c ${{ github.workspace }}/dilithium2/rounding.c ${{ github.workspace }}/dilithium2/sign.c ${{ github.workspace }}/dilithium2/symmetric-shake.c ${{ github.workspace }}/sphincs/address.c ${{ github.workspace }}/sphincs/context_shake.c ${{ github.workspace }}/sphincs/fors.c ${{ github.workspace }}/sphincs/hash_shake.c ${{ github.workspace }}/sphincs/merkle.c ${{ github.workspace }}/sphincs/sign.c ${{ github.workspace }}/sphincs/thash_shake_simple.c ${{ github.workspace }}/sphincs/utils.c ${{ github.workspace }}/sphincs/utilsx1.c ${{ github.workspace }}/sphincs/wots.c ${{ github.workspace }}/sphincs/wotsx1.c  ${{ github.workspace }}/random/randombytes.c ${{ github.workspace }}/common/fips202.c ${{ github.workspace }}/common/hybrid-common.c ${{ github.workspace }}/common/shake_prng.c ${{ github.workspace }}/tweetnacl/tweetnacl.c  ${{ github.workspace }}/hybrid-dilithium-sphincs/hybrid.c -o ${{ github.workspace }}/build/wasm/hybrid-pqc.html
+        cd ${{ github.workspace }}/emsdk && source ./emsdk_env.sh &&  emcc -s WASM=1 -s BINARYEN_ASYNC_COMPILATION=0 -s SINGLE_FILE=1 -s EXPORTED_FUNCTIONS="['_free', '_malloc']"  -s "EXPORTED_RUNTIME_METHODS=['getValue','writeArrayToMemory']" ${{ github.workspace }}/wasm/hybrid-pqc.c ${{ github.workspace }}/dilithium2/ntt.c ${{ github.workspace }}/dilithium2/packing.c ${{ github.workspace }}/dilithium2/poly.c ${{ github.workspace }}/dilithium2/polyvec.c ${{ github.workspace }}/dilithium2/reduce.c ${{ github.workspace }}/dilithium2/rounding.c ${{ github.workspace }}/dilithium2/sign.c ${{ github.workspace }}/dilithium2/symmetric-shake.c ${{ github.workspace }}/sphincs/address.c ${{ github.workspace }}/sphincs/context_shake.c ${{ github.workspace }}/sphincs/fors.c ${{ github.workspace }}/sphincs/hash_shake.c ${{ github.workspace }}/sphincs/merkle.c ${{ github.workspace }}/sphincs/sign.c ${{ github.workspace }}/sphincs/thash_shake_simple.c ${{ github.workspace }}/sphincs/utils.c ${{ github.workspace }}/sphincs/utilsx1.c ${{ github.workspace }}/sphincs/wots.c ${{ github.workspace }}/sphincs/wotsx1.c  ${{ github.workspace }}/random/randombytes.c ${{ github.workspace }}/common/fips202.c ${{ github.workspace }}/common/hybrid-common.c ${{ github.workspace }}/common/shake_prng.c ${{ github.workspace }}/tweetnacl/tweetnacl.c  ${{ github.workspace }}/hybrid-dilithium-sphincs/hybrid.c -o ${{ github.workspace }}/build/wasm/hybrid-pqc-sync.html
     - name: Check Files
       run:  ls  ${{ github.workspace }}/build
     - name: Create Release
       run: |
-        cd ${{ github.workspace }}/build/wasm && tar -czf ${{ github.workspace }}/build/hybrid-pqc-wasm.tar.gz .
-        sha256sum ${{ github.workspace }}/build/hybrid-pqc-wasm.tar.gz >${{ github.workspace }}/build/hybrid-pqc-wasm.txt
+        cd ${{ github.workspace }}/build/wasm && tar -czf ${{ github.workspace }}/build/hybrid-pqc-sync-wasm.tar.gz .
+        sha256sum ${{ github.workspace }}/build/hybrid-pqc-wasm.tar.gz >${{ github.workspace }}/build/hybrid-pqc-sync-wasm.txt
     - name: Check Release Files
       run: |
-        ls  ${{ github.workspace }}/build/hybrid-pqc-*.*
+        ls  ${{ github.workspace }}/build/hybrid-pqc-sync-*.*
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v3
       with:
