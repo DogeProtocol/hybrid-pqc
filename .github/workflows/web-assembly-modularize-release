@@ -1,0 +1,66 @@
+name: Hybrid-pqc Webassembly Library Modularize Release
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  Hybrid-pqc-WebassemblyLibrary:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
+      fail-fast: true
+
+      matrix:
+        os: [ubuntu-latest]
+        build_type: [Release]
+    env:
+      # Set this environment variable to test a specific Emscripten branch.
+      # Format: https://github.com/<fork>/emscripten/tree/<refspec>
+      EMSCRIPTEN_REPO: ""
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: emsdk install
+      run: |
+        mkdir ${{ github.workspace }}/emsdk
+        git clone --depth 1 https://github.com/emscripten-core/emsdk.git ${{ github.workspace }}/emsdk
+        ${{ github.workspace }}/emsdk/emsdk update-tags
+        ${{ github.workspace }}/emsdk/emsdk install tot
+        ${{ github.workspace }}/emsdk/emsdk activate tot
+    - name: override emscripten repository
+      if: ${{ env.EMSCRIPTEN_REPO != '' }}
+      run: |
+        ${{ github.workspace }}/emsdk/emsdk install emscripten-main-64bit \
+          --override-repository emscripten-main-64bit@$EMSCRIPTEN_REPO
+        ${{ github.workspace }}/emsdk/emsdk activate emscripten-main-64bit
+    - name: update path
+      run:  echo "PATH=$PATH:${{ github.workspace }}/emsdk" >> $GITHUB_ENV
+    - name: Create build folder
+      run: |
+        mkdir ${{ github.workspace }}/build
+        mkdir ${{ github.workspace }}/build/wasm
+    - name: Build Webassembly library
+      run: |
+        cd ${{ github.workspace }}/emsdk && source ./emsdk_env.sh &&  emcc -s MODULARIZE=1 -s  WASM=1 -s EXPORTED_FUNCTIONS="['_free', '_malloc']"  -s "EXPORTED_RUNTIME_METHODS=['getValue','writeArrayToMemory']" ${{ github.workspace }}/wasm/hybrid-pqc.c ${{ github.workspace }}/dilithium2/ntt.c ${{ github.workspace }}/dilithium2/packing.c ${{ github.workspace }}/dilithium2/poly.c ${{ github.workspace }}/dilithium2/polyvec.c ${{ github.workspace }}/dilithium2/reduce.c ${{ github.workspace }}/dilithium2/rounding.c ${{ github.workspace }}/dilithium2/sign.c ${{ github.workspace }}/dilithium2/symmetric-shake.c ${{ github.workspace }}/sphincs/address.c ${{ github.workspace }}/sphincs/context_shake.c ${{ github.workspace }}/sphincs/fors.c ${{ github.workspace }}/sphincs/hash_shake.c ${{ github.workspace }}/sphincs/merkle.c ${{ github.workspace }}/sphincs/sign.c ${{ github.workspace }}/sphincs/thash_shake_simple.c ${{ github.workspace }}/sphincs/utils.c ${{ github.workspace }}/sphincs/utilsx1.c ${{ github.workspace }}/sphincs/wots.c ${{ github.workspace }}/sphincs/wotsx1.c  ${{ github.workspace }}/random/randombytes.c ${{ github.workspace }}/common/fips202.c ${{ github.workspace }}/common/hybrid-common.c ${{ github.workspace }}/common/shake_prng.c ${{ github.workspace }}/tweetnacl/tweetnacl.c  ${{ github.workspace }}/hybrid-dilithium-sphincs/hybrid.c -o ${{ github.workspace }}/build/wasm/hybrid-pqc.html
+    - name: Check Files
+      run:  ls  ${{ github.workspace }}/build
+    - name: Create Release
+      run: |
+        cd ${{ github.workspace }}/build/wasm && tar -czf ${{ github.workspace }}/build/hybrid-pqc-wasm.tar.gz .
+        sha256sum ${{ github.workspace }}/build/hybrid-pqc-wasm.tar.gz >${{ github.workspace }}/build/hybrid-pqc-wasm.txt
+    - name: Check Release Files
+      run: |
+        ls  ${{ github.workspace }}/build/hybrid-pqc-*.*
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: webassembly-library-release
+        path: |
+          ${{ github.workspace }}/build/*.*
+    - name: release
+      uses: ncipollo/release-action@v1
+      with:
+        allowUpdates: true
+        artifacts: "build/*.tar.gz,build/*.txt"
