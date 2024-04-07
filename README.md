@@ -1,56 +1,42 @@
 [![CMake on multiple platforms](https://github.com/DogeProtocol/hybrid-pqc/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/DogeProtocol/hybrid-pqc/actions/workflows/cmake-multi-platform.yml)
 
 # Hybrid Post Quantum Cryptography
-While lattice based post-quantum cryptography schemes such as Falcon and Dilithium have been standardized, they haven’t 
+While lattice based post-quantum cryptography schemes such as SPHINCS+ and Dilithium have been standardized, they haven’t 
 been battle-tested widely over the years like RSA and Elliptic Curve vased crypto-schemes. It's possible that newer category of attacks on Lattice based cryptography may come to light.
 
 Because of these reasons, it's preferable to use a hybrid signature scheme that 
 uses two crypto schemes behind the scenes: a PQC scheme and a classical scheme (EdDSA). This hybrid 
-model is required to provide a hedge against Lattice based cryptography schemes such as Falcon getting broken 
-on classical computers in the interim. 
+model is required to provide a hedge against Lattice based cryptography schemes such as Dilithium getting broken 
+on classical computers in the interim. In addition, SPHINCS+ which is hash based is also part of the signature scheme, to be used as a breakglass (details below).
 
 When quantum computers capable enough to break EdDSA become available, the hybrid model 
 will still provide protection against quantum computer attacks, since a post quantum crypto scheme is used in the hybrid model. 
 
 This hybrid model will be abstracted away so that users do not have to worry 
-about managing two sets of keys. To users, it will be just one composite key to manage and 
+about managing multiple sets of keys. To users, it will be just one composite key to manage and 
 use. Likewise, higher-level developers do not have to worry about the hybrid 
 model, since it will be abstracted away.
 
 Some disadvantages of the hybrid model are increased complexity, increased risk of implementation bugs, increased compute time, increased 
 storage, and bandwidth requirements. However, the security benefits of the hybrid model outweigh these disadvantages.
 
-## Deterministic Key Generation
-A deterministic version of key generation has also been added. For example, this can be used for seed phrase based wallet generation for blockchains. The size of the seed is 80 bytes; 48 bytes for Falcon and 32 bytes for ed25519. The seed should be generated using a CSPRNG. 
+## Hybrid Scheme
+In this hybrid scheme, Dilithium, SPHINCS+ and ed25519 are used in a combiner mode. More details on the comment at https://github.com/DogeProtocol/hybrid-pqc/blob/main/hybrid-dilithium-sphincs/hybrid.c
 
-### Warning
-This is test software, not yet ready for production use. Do not use in production systems!
+Since SPHINCS+ signatures are large, the do not fit requirements of many applications. Because of this reason, this hybrid scheme supports two modes of signing:
 
-## Falcon
-Falcon is a Post Quantum Digital Signature Scheme that has been standardized by NIST.
-This repository is based on the Falcon512 reference imlpementation at [Round 3](https://csrc.nist.gov/Projects/post-quantum-cryptography/post-quantum-cryptography-standardization/round-3-submissions) submission of Falcon. 
+1) A compact mode in which a message hashed from the original message, the SPHINCS+ public-key and a 40 byte random nonce is embedded into the signature. If both Dilithium and ed25519 are broken in the future, the SPHINCS+ full signing mode can be required by the verifying applications, like a breakglass.
+2) A full mode in which all the three signature schemes are used to create a signature (including the full SPHINCS+ signature). 
+
+## Dilithium and SPHINCS+
+Dilihitum and SPHINCS+ are Post Quantum Digital Signature Schemes that have been standardized by NIST.
+This repository is based on the PQClean implementations at https://github.com/PQClean/PQClean 
 
 ## EdDSA
 The classical digital signature algorithm used is EdDSA (ed25519). The implementation used is [TweetNaCl](https://tweetnacl.cr.yp.to/), a self-contained public-domain C library. (https://tweetnacl.cr.yp.to/)
 
 ## Randombytes
 The random implementation is based on (https://github.com/dsprenkels/randombytes), which itself is based on libsodium randombytes.
-
-### Source
-[https://csrc.nist.gov/CSRC/media/Projects/post-quantum-cryptography/documents/round-3/submissions/Falcon-Round3.zip](https://csrc.nist.gov/CSRC/media/Projects/post-quantum-cryptography/documents/round-3/submissions/Falcon-Round3.zip)
-
-```SHA256: fd58f0454f6bfb4713734e60b2d2d75d96fbae62d5180fceeef1039df5362f44```
-
-### Layout
-![Layout](hybrid-pqc-dsa-layout.png)
-
-### Performance
-These numbers were evaluated on an [AWS t2.medium instance](https://aws.amazon.com/ec2/instance-types/t2/) over 10000 iterations (single threaded), running Ubuntu. Note that this instance type has burstable CPU performance, hence the following numbers are approximate. The reference implementation of Falcon512 from NIST Round 3 and ed25519 implementation from (https://tweetnacl.cr.yp.to/) was used.
-
-1. Generate Key Pair : 25 ms (40 per second)
-2. Sign: 8.5 ms (115 per second)
-3. Sign Open: 3.6 ms (280 per second)
-4. Verify: 3.6 ms  (280 per second)
 
 ## Building
 
@@ -103,7 +89,6 @@ Thank you for considering to help out with the source code!
 * Pull requests need to be based on and opened against the `main` branch.
 
 ## License
+PQClean: https://github.com/PQClean/PQClean
 
-This Falcon implementation is provided under the MIT license, whose text
-is included at the start of every source file.
 Random bytes and Hybrid also have their own license files (MIT License).
