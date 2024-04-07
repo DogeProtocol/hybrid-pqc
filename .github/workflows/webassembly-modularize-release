@@ -5,7 +5,7 @@ on:
       - '*'
 
 jobs:
-  Hybrid-pqc-WebassemblyLibrary:
+  Hybrid-pqc-ModularizeWebassemblyLibrary:
     runs-on: ${{ matrix.os }}
 
     strategy:
