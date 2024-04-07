@@ -1,11 +1,11 @@
-name: Hybrid-pqc Webassembly Library Release
+name: Hybrid-pqc Webassembly Sync Library Release
 on:
   push:
     tags:
       - '*'
 
 jobs:
-  Hybrid-pqc-WebassemblyLibrary:
+  Hybrid-pqc-sync-WebassemblyLibrary:
     runs-on: ${{ matrix.os }}
 
     strategy:
