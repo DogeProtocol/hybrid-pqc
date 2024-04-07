@@ -319,7 +319,7 @@ static int randombytes_js_randombytes_nodejs(void *buf, size_t n) {
 
 	const int ret = EM_ASM_INT({
 
-		if (window && window.crypto && window.crypto.getRandomValues) {
+		if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
 			var randBuffer = new Uint8Array($1);
 			window.crypto.getRandomValues(randBuffer);
 			writeArrayToMemory(randBuffer, $0);
