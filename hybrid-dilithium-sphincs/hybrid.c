@@ -109,7 +109,7 @@ Hybrid Signature Length (full, used during breakglass) = 1 + 1 + 64 + {1 to 64} 
 Layout of signature:
 
 1 byte                  | 1 byte            | 64 bytes          | {1 to 64 bytes}   | 2420 bytes          | 49856
-signature id (always 1) | length of message | ed25519 signature | original message  | dilithium signature | sphincs signature
+signature id (always 2) | length of message | ed25519 signature | original message  | dilithium signature | sphincs signature
 
 Message is variable length, between 1 to 64 bytes
 */
