@@ -1,0 +1,37 @@
+name: iOS library build
+
+on:
+  push:
+    tags:
+    - '*'  
+
+jobs:
+  apple-mac:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        platform: [OS64, TVOS]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Generate project
+        run: cmake -B build --toolchain .CMake/apple.cmake -DOQS_USE_OPENSSL=OFF -DPLATFORM=${{ matrix.platform }} .
+        
+      - name: Build project
+        run: cmake --build build
+        
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v3
+        
+        with:
+          name: hybridpqc
+          path: |
+                ${{ github.workspace }}/build/lib/*.*
+                
+      - name: release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: "build/lib/*.*"
