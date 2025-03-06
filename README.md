@@ -1,3 +1,5 @@
+# This repository is now maintained at https://github.com/quantumcoinproject/hybrid-pqc
+
 [![Build and Test](https://github.com/DogeProtocol/hybrid-pqc/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/DogeProtocol/hybrid-pqc/actions/workflows/build-and-test.yml)
 
 # Hybrid Post Quantum Cryptography
